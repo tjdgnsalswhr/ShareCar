@@ -1,10 +1,10 @@
-# 호텔 예약
+# ShareCar
 
-Winter School 2팀 Workspace입니다.
+Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스입니다.
 
 # Table of contents
 
-- [호텔예약](#---)
+- [차량예약](#---)
   - [서비스 시나리오](#시나리오)
   - [분석/설계](#분석-설계)
   - [구현:](#구현)
@@ -23,6 +23,7 @@ Winter School 2팀 Workspace입니다.
     - [오토스케일 아웃](#오토스케일-아웃)
     - [무정지 재배포](#무정지-배포)
     - [ConfigMap / Secret](#Configmap)
+
 
 ## 시나리오
 
