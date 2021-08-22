@@ -49,7 +49,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 2. 장애격리
    - 차량 관리 기능이 수행되지 않더라도, 차량 예약은 항상 진행될 수 있어야 한다. `Pub/Sub`
    - 결제 시스템이 과중되면 사용자를 잠시동안 받지 않고 결제를 잠시후에 하도록 한다.
-     (장애처리)
+     (장애처리 : Circuit Breaker, fallback)
 
 3. 성능
    - 고객이 예약 확인 상태를 마이페이지에서 확인할 수 있어야 한다. `CQRS`
@@ -69,7 +69,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 - 차량검색됨과 예약정보 조회됨는, UI적 이벤트이지 업무적인 이벤트가 아니므로 제외함. 
 
-![screenshot-miro com-2020 12 21-13_50_26](https://user-images.githubusercontent.com/76149887/102837515-453a2900-443f-11eb-8293-e7f46bc94732.png)
+![image](https://user-images.githubusercontent.com/32426312/130359864-33e8ef85-792d-4206-8625-2d28b0952efe.png)
 
 - 후에 코드 변환을 위해 영어로 전환.
 
@@ -94,6 +94,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 ![image](https://user-images.githubusercontent.com/32426312/130358246-bea64aa3-abb7-48d0-b282-eef3f863773e.png)
 
+
 #### 최종 결과
 
 ![image](https://user-images.githubusercontent.com/32426312/130359638-4d4fc64d-9fdb-4886-88d5-48464f9df22e.png)
@@ -113,15 +114,16 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 ### 비기능 요구사항을 커버하는지 검증
 
 1. 트랜잭션 
-   - 예약이 결제까지 끝나지 않고 중간에 취소되면, 예약 정보는 아예 생성되지 않아야 한다. `Sync 호출`(O)
-   - Request-Response 방식 처리
+   - 결제가 되지 않은 예약건은, 아예 예약 정보가 생성되지 않아야 한다. `Sync 호출`(O)
+   - Request-Response 방식 처리 (OrderPlaced -> pay : 결제를 거치지 않고서는 Reservation이 생성되지 않는다.)
 
 2. 장애격리
    - 차량 관리 기능이 수행되지 않더라도, 차량 예약은 항상 진행될 수 있어야 한다. (O)
-   - Eventual Consistency 방식으로 트랜잭션 처리(Pub/Sub)
+   - Eventual Consistency 방식으로 트랜잭션 처리 `(Pub/Sub)` `Async 호출`
 
 3. 성능
    - 고객이 예약 확인 상태를 마이페이지에서 확인할 수 있어야 한다. `CQRS`
+
 
 ## 헥사고날 아키텍처 다이어그램 도출
 - 비지니스 로직은 내부에 순수한 형태로 구현
@@ -323,7 +325,34 @@ Transfer-Encoding: chunked
 
 ## 마이페이지
 
-고객의 예약정보를 한 눈에 볼 수 있게 mypage를 구현 한다.(CQRS)
+사용자의 예약정보를 한 눈에 볼 수 있게 mypage를 구현 한다.(CQRS)
+
+- MyPage 생성 단계
+
+
+![image](https://user-images.githubusercontent.com/32426312/130360123-c5069bb7-3478-4bc5-ac6c-08b198e769f3.png)
+
+	-> MyPage 에서는 예약정보를 볼 수 있어야 하므로 모든 변수를 주입해준다.
+
+
+![image](https://user-images.githubusercontent.com/32426312/130360160-91d25592-6e6c-4efd-a741-5a7485e070d5.png)
+
+	-> MyPage는 기본적으로 Order가 생성될때 같이 생성되도록 한다.
+
+
+![image](https://user-images.githubusercontent.com/32426312/130360195-3f7f5f92-16e1-4992-b8c6-a22bec86a80d.png)
+
+![image](https://user-images.githubusercontent.com/32426312/130360245-cf47f53e-c444-4be9-9712-a5d00845a2cf.png)
+
+
+	-> status의 경우 1은 order만 진행된 상태, 2는 결제까지 진행된 상태, 3은 예약이 완료된 상태이다.
+	-> 결제완료, 결제취소, 예약확정, 예약취소의 경우 MyPage의 status를 변화시킨다.
+
+
+![image](https://user-images.githubusercontent.com/32426312/130360264-976aa30b-efbe-4a20-b649-5c35a641a918.png)
+
+ 	-> Order가 삭제될 때, 관련된 MyPage도 삭제된다.
+
 
 
 ```
