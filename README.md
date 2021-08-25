@@ -73,7 +73,9 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 - 후에 코드 변환을 위해 영어로 전환.
 
-![image](https://user-images.githubusercontent.com/32426312/130764237-6b502288-38b6-4cda-abf1-5512edf95a90.png)
+![image](https://user-images.githubusercontent.com/32426312/130784377-e0475ccd-3508-4976-bae2-0f466bb97e95.png)
+
+- 처음에 Order가 아닌 Car라는 단어를 사용하려고 했으나, 보통 이런 경우 공용으로 쓰이는 단어인 Order를 사용하는게 좋다고 배워 Order
 
 
 
