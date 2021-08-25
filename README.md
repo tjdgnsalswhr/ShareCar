@@ -79,8 +79,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 #### Actor, Command
 
-![image](https://user-images.githubusercontent.com/32426312/130357463-008e8067-62c2-4b4e-8641-a099b8fe8829.png)
-
+![image](https://user-images.githubusercontent.com/32426312/130771631-c4f4fade-7b33-4e4f-bf56-868245f3a1af.png)
 
 #### Aggregate
 
