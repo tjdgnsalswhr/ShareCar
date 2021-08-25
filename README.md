@@ -73,7 +73,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 - 후에 코드 변환을 위해 영어로 전환.
 
-![image](https://user-images.githubusercontent.com/32426312/130357112-6c2be268-c04a-45ef-87a9-360c491c4f4d.png)
+![image](https://user-images.githubusercontent.com/32426312/130764237-6b502288-38b6-4cda-abf1-5512edf95a90.png)
 
 
 
