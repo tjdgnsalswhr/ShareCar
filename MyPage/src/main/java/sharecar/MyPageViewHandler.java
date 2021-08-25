@@ -32,7 +32,7 @@ public class MyPageViewHandler {
             myPage.setUserName(orderPlaced.getUserName());
             myPage.setCardNo(orderPlaced.getCardNo());
             myPage.setOrderId(orderPlaced.getId());
-            myPage.setStatus("1");
+            myPage.setStatus("차량 신청됨");
             // view 레파지 토리에 save
             myPageRepository.save(myPage);
 
@@ -48,14 +48,14 @@ public class MyPageViewHandler {
             if (!paymentApproved.validate()) return;
                 // view 객체 조회
 
-                    List<MyPage> myPageList = myPageRepository.findByOrderId(paymentApproved.getOrderId());
-                    for(MyPage myPage : myPageList){
+                    MyPage myPage = myPageRepository.findByOrderId(paymentApproved.getOrderId());
+                    //for(MyPage myPage : myPageList){
                     // view 객체에 이벤트의 eventDirectValue 를 set 함
                     myPage.setCardNo(paymentApproved.getCardNo());
-                    myPage.setStatus("2");
+                    myPage.setStatus("차량 금액 결제됨");
                 // view 레파지 토리에 save
                 myPageRepository.save(myPage);
-                }
+                //}
 
         }catch (Exception e){
             e.printStackTrace();
@@ -67,13 +67,14 @@ public class MyPageViewHandler {
             if (!reservationAccepted.validate()) return;
                 // view 객체 조회
 
-                    List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
-                    for(MyPage myPage : myPageList){
+                    ///List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    MyPage myPage = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    //for(MyPage myPage : myPageList){
                     // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setStatus("3");
+                    myPage.setStatus("예약 완료됨");
                 // view 레파지 토리에 save
                 myPageRepository.save(myPage);
-                }
+                //}
 
         }catch (Exception e){
             e.printStackTrace();
@@ -85,13 +86,14 @@ public class MyPageViewHandler {
             if (!paymentCanceled.validate()) return;
                 // view 객체 조회
 
-                    List<MyPage> myPageList = myPageRepository.findByOrderId(paymentCanceled.getOrderId());
-                    for(MyPage myPage : myPageList){
+                    ///List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    MyPage myPage = myPageRepository.findByOrderId(paymentCanceled.getOrderId());
+                    //for(MyPage myPage : myPageList){
                     // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setStatus("1");
+                    myPage.setStatus("결제 취소됨");
                 // view 레파지 토리에 save
                 myPageRepository.save(myPage);
-                }
+                //}
 
         }catch (Exception e){
             e.printStackTrace();
@@ -101,15 +103,16 @@ public class MyPageViewHandler {
     public void whenReservationCanceled_then_UPDATE_4(@Payload ReservationCanceled reservationCanceled) {
         try {
             if (!reservationCanceled.validate()) return;
-                // view 객체 조회
+               // view 객체 조회
 
-                    List<MyPage> myPageList = myPageRepository.findByOrderId(reservationCanceled.getOrderId());
-                    for(MyPage myPage : myPageList){
+                    ///List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    MyPage myPage = myPageRepository.findByOrderId(reservationCanceled.getOrderId());
+                    //for(MyPage myPage : myPageList){
                     // view 객체에 이벤트의 eventDirectValue 를 set 함
-                    myPage.setStatus("2");
+                    myPage.setStatus("예약 취소됨");
                 // view 레파지 토리에 save
                 myPageRepository.save(myPage);
-                }
+                //}
 
         }catch (Exception e){
             e.printStackTrace();
