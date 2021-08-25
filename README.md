@@ -133,7 +133,21 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 ![event_stream](https://user-images.githubusercontent.com/76020494/108794206-b07fb300-75c8-11eb-9f97-9a4e1695588c.png)
 
 
-# 구현
+# 코드구현 및 실행결과
+
+## DDD의 적용
+
+- 코드 구현의 경우, 위에서 생성한 DDD를 기반으로 코드 자동생성을 한 후 에러를 수정하였다.
+- 그 뒤 필요한 비즈니스 로직을 내부에 추가하였다.
+- 크게 Order, Payment, Reservation, MyPage가 있지만, 모든 코드를 담는 것에는 한계가 있으므로 Payment를 예시로 첨부한다.
+- Payment를 첨부하는 이유는, Order와 Req/Resp 방식의 Sync 통신이 구현됨과 동시에 Reservation과 Pub/Sub 방식의 Async 통신도 담고 있기 때문이다.
+
+
+### Aggregate (Payment Service) - PaymentHistory
+
+
+
+
 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 8084 이다)
 
 ```
@@ -149,10 +163,6 @@ mvn spring-boot:run
 cd /Users/imdongbin/Documents/study/MSA/hotel/customer
 mvn spring-boot:run 
 ```
-
-## DDD 의 적용
-
-- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 pay 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 예를 들어 price, payMethod 등)
 
 ```
 package hotel;
