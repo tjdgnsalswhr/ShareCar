@@ -19,14 +19,16 @@ public class PaymentHistory {
     @PostPersist
     public void onPostPersist(){
         PaymentApproved paymentApproved = new PaymentApproved();
+        paymentApproved.setOrderId(this.id);
         paymentApproved.setStatus("Payment is Approved");
+        paymentApproved.setCardNo(this.cardNo);
         System.out.println("Payment is approved, orderId is : " + this.orderId);
         BeanUtils.copyProperties(this, paymentApproved);
         paymentApproved.publishAfterCommit();
 
     }
-    @PostUpdate
-    public void onPostUpdate() {
+    @PreRemove
+    public void onPreRemove() {
     	PaymentCanceled paymentCanceled = new PaymentCanceled();
         System.out.println("Payment is canceled, orderId is : " + this.orderId);
         paymentCanceled.setStatus("Payment canceled");

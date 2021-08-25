@@ -28,13 +28,6 @@ public class PolicyHandler{
             payment.setStatus("PaymentCancelled!");
             paymentHistoryRepository.save(payment);
         }
-
-
-
-        // Sample Logic //
-        // PaymentHistory paymentHistory = new PaymentHistory();
-        // paymentHistoryRepository.save(paymentHistory);
-
     }
 
 
