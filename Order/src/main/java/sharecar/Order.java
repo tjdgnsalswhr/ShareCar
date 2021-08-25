@@ -20,27 +20,31 @@ public class Order {
 
     @PostPersist
     public void onPostPersist(){
+
+
         OrderPlaced orderPlaced = new OrderPlaced();
+        orderPlaced.setStatus("Car is Selected, This order id is :" + this.id);
+        System.out.println("Car is Selected, This order id is :" + this.id);
         BeanUtils.copyProperties(this, orderPlaced);
         orderPlaced.publishAfterCommit();
 
-        //Following code causes dependency to external APIs
-        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
+        //Order가 생성됨에 따라, Sync/Req,Resp 방식으로 Payment를 부르는 과정
         PaymentHistory paymentHistory = new PaymentHistory();
-        // mappings goes here
-        System.out.println("New Order is tempted, orderId is : " + this.id);
+        System.out.println("Payment is Requested, orderId is : " + this.id);
         paymentHistory.setOrderId(this.id);
-        paymentHistory.setStatus("2");
+        paymentHistory.setCardNo(this.cardNo);
+        paymentHistory.setStatus("Payment is Requested, orderId is : " + this.id);
         OrderApplication.applicationContext.getBean(sharecar.external.PaymentHistoryService.class)
             .pay(paymentHistory);
 
     }
 
-    @PostUpdate
-    public void onPostUpdate(){
+    @PreRemove
+    public void onPreRemove(){
     	OrderCancelled orderCancelled = new OrderCancelled();
-        System.out.println("Order is deleted, orderId is : " + this.id);
+        orderCancelled.setStatus("Car is Canceled, This id is " + this.id);
+        System.out.println("Car is Canceled, This id is " + this.id);
         BeanUtils.copyProperties(this, orderCancelled);
         orderCancelled.publishAfterCommit();
     }
