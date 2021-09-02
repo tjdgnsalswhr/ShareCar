@@ -139,7 +139,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 ![event_stream](https://user-images.githubusercontent.com/76020494/108794206-b07fb300-75c8-11eb-9f97-9a4e1695588c.png)
 
----
+
 
 # 코드구현 및 실행결과
 
