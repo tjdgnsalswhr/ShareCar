@@ -1016,161 +1016,71 @@ server:
 ---
 ```
 
+- 위 코드에서 API Gateway는 8080 포트로 사용하였고, 각 서비스로 접근할 수 있게 잘 지정해주었다.
 
-### gateway 구동(8088 포트)
-cd gateway
-mvn spring-boot:run
 
-# api gateway를 통한 3001 호텔 standard룸 예약 주문
-http localhost:8088/orders hotelId=3001 roomType=standard
 
-HTTP/1.1 201 Created
-Content-Type: application/json;charset=UTF-8
-Date: Mon, 22 Feb 2021 07:36:34 GMT
-Location: http://localhost:8081/orders/13
-transfer-encoding: chunked
+### Gateway 실행 (8080 포트)
 
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/13"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/13"
-        }
-    },
-    "hotelId": "3001",
-    "roomType": "standard",
-    "status": null
-}
+![image](https://user-images.githubusercontent.com/32426312/131783700-e6163a8c-0b3a-4c3b-9567-b34f791421ca.png)
+
+
+### Api Gateway 만을 사용한 API TEST
+
+#### Gateway 에서 주문처리 (차량 신청 처리)
+
+- 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
+
+```bash
+http localhost:8080/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청
+http localhost:8080/orders carNumber=101가1231 carBrand=아반떼 carPost=우림빌딩 userName=Park status=차량신청
 ```
 
-```
-application.yml
+- 실행결과  
 
-server:
-  port: 8080
+![image](https://user-images.githubusercontent.com/32426312/131784128-d4bb0229-925b-4b13-bddc-6be746dab212.png)
 
----
+![image](https://user-images.githubusercontent.com/32426312/131784156-aa110d0c-f602-4f30-b6fa-e04a1e8fb335.png)
+  
+&nbsp;
 
-spring:
-  profiles: default
-  cloud:
-    gateway:
-      routes:
-        - id: order
-          uri: http://localhost:8081
-          predicates:
-            - Path=/orders/** 
-        - id: reservation
-          uri: http://localhost:8082
-          predicates:
-            - Path=/reservations/**,/cancellations/** 
-        - id: payment
-          uri: http://localhost:8083
-          predicates:
-            - Path=/paymentHistories/** 
-        - id: customer
-          uri: http://localhost:8084
-          predicates:
-            - Path= /mypages/**
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins:
-              - "*"
-            allowedMethods:
-              - "*"
-            allowedHeaders:
-              - "*"
-            allowCredentials: true
+#### Gateway 에서 Payment 조회
 
-
----
-
-spring:
-  profiles: docker
-  cloud:
-    gateway:
-      routes:
-        - id: order
-          uri: http://order:8080
-          predicates:
-            - Path=/orders/** 
-        - id: reservation
-          uri: http://reservation:8080
-          predicates:
-            - Path=/reservations/**,/cancellations/** 
-        - id: payment
-          uri: http://payment:8080
-          predicates:
-            - Path=/paymentHistories/** 
-        - id: customer
-          uri: http://customer:8080
-          predicates:
-            - Path= /mypages/**
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins:
-              - "*"
-            allowedMethods:
-              - "*"
-            allowedHeaders:
-              - "*"
-            allowCredentials: true
-            
-logging:
-  level:
-    root: debug
-
-server:
-  port: 8080
-
+```bash
+http GET localhost:8080/paymentHistories
 ```
 
-## spring-boot-starter-security 인증을 활용한 MSA 보호
+- 실행결과
 
-- gateway > pom.xml 에 spring-boot-starter-security 추가
-```
-		<!-- 인증 추가-->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-```
+![image](https://user-images.githubusercontent.com/32426312/131784263-658d065f-c6aa-4a49-98e2-2aa7ec4f8e21.png)
+	
+&nbsp;
 
-- gateway 재기동 하여 콘솔 로그에서 비밀번호 확인
-```
-...
-2021-02-22 18:49:49.393  INFO 56079 --- [           main] ctiveUserDetailsServiceAutoConfiguration : 
+#### Gateway 에서 Reservation 조회
 
-Using generated security password: 4c9b4f9b-ba47-4ad9-b5c0-9b4a12a89a39
-
-2021-02-22 18:49:49.402  INFO 56079 --- [           main] o.s.c.g.r.RouteDefinitionRouteLocator    : Loaded RoutePredicateFactory [After]
-...
+```bash
+http GET localhost:8080/reservations
 ```
 
-- 포스트맨을 통해 인증 없이 orders/19 상세 조회
-<img width="937" alt="스크린샷 2021-02-22 오후 6 55 40" src="https://user-images.githubusercontent.com/58290368/108692169-a06fc100-753f-11eb-92cc-17c37c7f2ec2.png">
+- 실행결과
 
-- 포스트맨에서 앞서 확인한 비밀번호 "4c9b4f9b-ba47-4ad9-b5c0-9b4a12a89a39"를 입력 하여 동일한 orders/19 상세 조회
-<img width="945" alt="스크린샷 2021-02-22 오후 6 57 46" src="https://user-images.githubusercontent.com/58290368/108692422-ecbb0100-753f-11eb-9e81-85b58eed57be.png">
+![image](https://user-images.githubusercontent.com/32426312/131784378-118308ba-f909-4120-892b-4b10bd8d1535.png)
 
-# SAGA CQRS 동작 결과
-1. 호텔 예약 발생
-![order1](https://user-images.githubusercontent.com/76020494/108938712-f05f9c80-7693-11eb-9617-6e6564f9e7ec.png)
-2. 예약 KAFKA 메시지 확인
-![order_kafka](https://user-images.githubusercontent.com/76020494/108938721-f3f32380-7693-11eb-92f5-6257ba18faf6.png)
-3. 예약 내역 Mypage 확인 
-![order_mypage](https://user-images.githubusercontent.com/76020494/108938732-f6557d80-7693-11eb-88db-93933a6182e2.png)
+&nbsp;
 
-4. 취소 발생
-![cancel](https://user-images.githubusercontent.com/76020494/108938741-fa819b00-7693-11eb-8d97-9f549685cada.png)
-5. 취소 KAFKA 메시지 확인
-![cancel_kafka](https://user-images.githubusercontent.com/76020494/108938746-fbb2c800-7693-11eb-9566-62a9498e015a.png)
-6. 취소 상태 Mypage 확인
-![cancel_mypage](https://user-images.githubusercontent.com/76020494/108938753-fd7c8b80-7693-11eb-8016-4b00100def94.png)
+#### Gateway 에서 MyPage 조회
+
+```bash
+http GET localhost:8080/myPages
+```
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131784474-b4425e1e-4ec8-45f3-9472-4cc5dbb36355.png)
+
+&nbsp;
+&nbsp;
+
 
 # 운영
 
