@@ -1687,41 +1687,73 @@ kubectl delete pod [pod이름]
 
 ## Configmap (Check-Point)
 
-- configmap 생성  
-  > kubectl create configmap my-config --from-literal=key1=value1 --from-literal=key2=value2
-- configmap 정보 가져오기  
-  > kubectl get configmaps my-config -o yaml  
+- configmap을 생성하는 방법에는 단순 CLI로 하는 법과 Yaml 파일을 작성해서 배포하는 방법이 있다.
+- CLI로 생성하는 방법은 다음과 같다.
 
-- 파일로부터 configmap 생성 (configmap.yml 생성)
+```bash
+kubectl create configmap test-config --from-literal=language=java --from-literal=level=expert
 ```
+
+![image](https://user-images.githubusercontent.com/32426312/131892104-0733e8fd-f325-445d-987f-c69a46d5805b.png)
+
+
+- 잘 생성되었는지 정보를 가져온다.
+
+```bash
+kubectl get cm
+kubectl get configmaps [이름] -o yaml
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131892407-2c69727b-3859-4164-8de7-c30e1125a433.png)
+
+
+- 다음은 yaml 파일로 만들어서 생성하는 방법이다.
+- testconfig2.yml을 생성하여 다음과 같이 작성한다.
+
+```bash
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: customer1
+  name: configtest
 data:
-  TEXT1: Customer1_Company
-  TEXT2: Welcomes You
-  COMPANY: Customer1 Company Technology Pct. Ltd.
+  TEXT1: This
+  TEXT2: is
+  TEXT3: Configmaptest
 ```
-  > kubectl create -f configmap.yml
-- ![configmap](https://user-images.githubusercontent.com/17754849/108792601-fd618a80-75c4-11eb-9386-3d8785979309.png)
-- 출력하는 소스는 아래의 secret에서 함께 
+
+- 그후 배포까지 진행한다.
+
+```bash
+kubectl apply -f testconfig2.yml 
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131895111-7d91c438-ceb8-45d6-aa22-6ea206c9a582.png)
+
+![image](https://user-images.githubusercontent.com/32426312/131895361-0cb9c590-7bae-49b9-9033-0c318f0516f7.png)
+
+
+
 
 ## Secret
-- 시크릿 생성
+
+- Configmap과 함께 쓰이는 Secret을 생성한다
+
 ```
-kubectl create secret generic my-password --from-literal=password=mysqlpassword --namespace teamtwohotel
+kubectl create secret generic my-password --from-literal=password=testconfigpassword
 ```
-  > ![secret](https://user-images.githubusercontent.com/17754849/108868200-4f43f800-7639-11eb-8915-1999a695b85b.png)
-- 시크릿 확인
-```
+
+![image](https://user-images.githubusercontent.com/32426312/131892784-1cb2b186-cd41-428f-9659-57304672f463.png)
+
+- 잘 생성되었는지 확인해본다.
+
+```bash
 kubectl get secret my-password -o yaml
 ```
-  > ![확인](https://user-images.githubusercontent.com/17754849/108868606-b8c40680-7639-11eb-8296-dfc2ad9cb4e0.png)
-- 시크릿 buildspec.yml
-  > ![소스](https://user-images.githubusercontent.com/17754849/108870840-dd20e280-763b-11eb-8e55-bfc9dc70e9e0.png)
-- 시크릿 자바 출력
-  > ![결과출력](https://user-images.githubusercontent.com/17754849/108871144-30933080-763c-11eb-8e76-453348bb7ec0.png)
 
+![image](https://user-images.githubusercontent.com/32426312/131892968-1afe8ef3-1304-4a1c-aebd-ccfa0888fd88.png)
+
+- 위에서 볼 수 있듯이 현재 비밀번호는 암호화 되어서 들어갔는데, 잘 암화화 되었는지 다음과 같이 확인이 가능하다.
+
+![image](https://user-images.githubusercontent.com/32426312/131894125-faf2fd76-076b-4043-a359-e492c4098d41.png)
 
 
