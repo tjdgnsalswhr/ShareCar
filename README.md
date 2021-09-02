@@ -287,21 +287,29 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
  - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
 
 <Order>
+
 ![image](https://user-images.githubusercontent.com/32426312/131766498-bbb50067-13fd-4741-9fc4-076564edde59.png)
 
 <Payment>
+
 ![image](https://user-images.githubusercontent.com/32426312/131766555-e62b7c5c-c38a-4422-a894-3c4bd2c8ab2d.png)
 
 <Reservation>
+
 ![image](https://user-images.githubusercontent.com/32426312/131766674-241c7111-47ae-454f-94d6-cea19e5aee6e.png)
 
+
 <MyPage>
+
 ![image](https://user-images.githubusercontent.com/32426312/131766725-aad35f34-bf57-4ff0-89f4-1d7fcb4187b8.png)
+
+
 
 
 
 - 적용 후 REST API 의 테스트
 	
+
 
 < Order 서비스에서 주문처리 (차량 신청 처리) >
 
@@ -320,6 +328,8 @@ http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우�
 ![image](https://user-images.githubusercontent.com/32426312/131767920-fc538dd3-0428-4734-a904-b65b643c66c9.png)
 
 
+
+
 < Payment 서비스에서 조회 >
 
 - Order에서 Payment로 Sync, Req/Resp 방식으로 호출하므로, Order에서 주문이 생성되면 Payment에서도 조회가 가능해야한다.
@@ -336,6 +346,7 @@ http GET localhost:8082/paymentHistories
 - 앞서 생성한 두개의 orderId가 조회되고 있다.
 
 	
+
 < Reservation 서비스에서 조회 >
 
 - 결제가 진행되면 Reservation이 생성된다.
