@@ -1084,7 +1084,21 @@ http GET localhost:8080/myPages
 
 # 운영
 
-## CI/CD 설정
+## CI/CD (Check-Point)
+
+### 마이크로 서비스 별로 Git Repo 준비.
+
+- CI/CD를 설정하기 위해서는, 마이크로서비스 별로 Repository가 존재해야한다.
+- Github에서 Order, Payment, Reservation, MyPage, Gateway에 대한 Git Repo를 생성하고 코드를 올린다.
+
+
+### AWS ECR에 마이크로 서비스 별로 Resistry 준비
+
+- 각 마이크로서비스별 Repository에 연결될 ECR 저장소도 필요하다.
+- 
+
+
+
 - 환경변수 준비  
 <details markdown="1">
 <summary>환경변수 설정 접기/펼치기</summary>
