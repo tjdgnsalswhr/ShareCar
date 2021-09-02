@@ -1504,28 +1504,13 @@ kubectl apply -f siege.yml
 
 ```bash
 kubectl exec -it siege -- bash
-siege -v -c45 -t55S --content-type "application/json" 'http://sharecar-order:8080/orders POST {"carBrand":"쏘나타","carNumber":"01누1111"}'
+siege -v -c45 -t55S --content-type "application/json" 'http://sharecar-order:8080/orders POST {"carBrand":"쏘나타","carNumber":"01누1111","status":"차량신청"}'
 ```
 
+![image](https://user-images.githubusercontent.com/32426312/131863075-001d0164-9ec9-4258-a09e-49e14a2fa0cb.png)
 
-![image](https://user-images.githubusercontent.com/32426312/131857263-1e1ea0af-f1b8-432d-9c2a-a7ddec744e24.png)
 
-
-defaulting to time-based testing: 60 seconds
-
-{	"transactions":			        1054,
-	"availability":			       80.34,
-	"elapsed_time":			       59.74,
-	"data_transferred":		        0.30,
-	"response_time":		        5.47,
-	"transaction_rate":		       17.64,
-	"throughput":			        0.00,
-	"concurrency":			       96.58,
-	"successful_transactions":	        1054,
-	"failed_transactions":		         258,
-	"longest_transaction":		        8.41,
-	"shortest_transaction":		        0.44
-}
+![image](https://user-images.githubusercontent.com/32426312/131863204-8281e459-c56d-417b-a0e4-e48ab903b838.png)
 
 
 - 위 사진에서, 중간에 Request가 빨간불이 되었다가 파란불이 되는 것을 반복하는것이 보인다.
@@ -1533,18 +1518,62 @@ defaulting to time-based testing: 60 seconds
 
 
 
+
 ## Autoscale HPA (Check-Point)
 
-#### 사전 작업
-2. Resource Request/Limit 설정
-![image](https://user-images.githubusercontent.com/17021291/108804593-09f3dc00-75e1-11eb-9505-6d2140b61d00.png)
-3. HPA 설정 - kubectl autoscale deployment payment --cpu-percent=50 --min=1 --max=10 cpu-percent=50 -n teamtwohotel  
+### deployment.yml 파일 수정
 
-Pod 들의 요청 대비 평균 CPU 사용율 (여기서는 요청이 200 milli-cores이므로, 모든 Pod의 평균 CPU 사용율이 100 milli-cores(50%)를 넘게되면 HPA 발생)"
+- 먼저 테스트 타겟이 될 deployment를 수정해야 한다. 
+- 다음과 같은 명령어를 실행하여 deployment를 연다.
+
+```bash
+kubectl edit deployment sharecar-reservation
+```
+
+- 그 후, Resoure 부분을 찾아 request와 limits 항목을 추가해준다.
+
+![image](https://user-images.githubusercontent.com/32426312/131869041-e0d7749f-5d99-41d8-bbb1-9de1c9bbcefa.png)
 
 
-#### 부하에 따른 오토스케일 아웃 모니터링
-![image](https://user-images.githubusercontent.com/17021291/108803415-f4c97e00-75dd-11eb-9fa0-7c01135c551d.png)
+
+### Autoscale 설정
+
+- Pod가 Autoscale 되도록 다음의 명령어를 실행하여 설정한다.
+
+```bash
+kubectl autoscale deployment sharecar-order --cpu-percent=50 --min=1 --max=10
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131869194-202359c1-1302-4a6c-80d0-6989f3678fd8.png)
+
+
+- 잘 적용 되었는지 다음의 명령어로 확인 가능하다.
+
+```bash
+kubectl get horizontalpodautoscaler
+kubectl get hpa
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131869293-705350eb-021d-4c02-861b-4dde3de6637d.png)
+
+
+### 부하테스트
+
+- 부하를 주기 전, 실시간으로 pod의 scaling을 모니터링 할 터미널을 띄운다.
+
+```bash
+watch kubectl get pod
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131871551-81fa0700-70ef-4214-b4eb-45c8c9f0eb0a.png)
+
+
+- 이제 타겟 Deployment로 부하를 준다.
+
+```bash
+kubectl exec -it siege -- bash
+siege -v -c30 -t30s http://sharecar-order:8080
+```
 
 
 ## 무정지 배포
