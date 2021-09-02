@@ -301,9 +301,11 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 
 - 적용 후 REST API 의 테스트
-<br>
+	
+
 < Order 서비스에서 주문처리 (차량 신청 처리) >
-<br>
+
+
 - 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
 
 ```java
@@ -327,7 +329,8 @@ http GET localhost:8082/paymentHistories
 ```
 
 - 실행결과
-<br>
+
+
 ![image](https://user-images.githubusercontent.com/32426312/131768274-0f47af35-2586-48f7-b514-d3d533ac2d5b.png)
 	
 - 앞서 생성한 두개의 orderId가 조회되고 있다.
