@@ -282,10 +282,12 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ## Local에서의 코드 실행 결과
 
 ### 각 마이크로서비스 실행
-<br>
+
  - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
  - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
- &nbsp;
+
+
+&nbsp;
 
 <Order>
 
