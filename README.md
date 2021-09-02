@@ -327,6 +327,7 @@ http GET localhost:8082/paymentHistories
 ```
 
 - 실행결과
+<br>
 ![image](https://user-images.githubusercontent.com/32426312/131768274-0f47af35-2586-48f7-b514-d3d533ac2d5b.png)
 	
 - 앞서 생성한 두개의 orderId가 조회되고 있다.
@@ -341,6 +342,7 @@ http GET localhost:8083/reservations
 ```
 
 - 실행결과
+
 ![image](https://user-images.githubusercontent.com/32426312/131768706-a49dbd1c-c0ba-48a9-b79f-12964632b748.png)
 
 
