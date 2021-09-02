@@ -1532,7 +1532,7 @@ kubectl edit deployment sharecar-reservation
 
 - 그 후, Resoure 부분을 찾아 request와 limits 항목을 추가해준다.
 
-![image](https://user-images.githubusercontent.com/32426312/131869041-e0d7749f-5d99-41d8-bbb1-9de1c9bbcefa.png)
+![image](https://user-images.githubusercontent.com/32426312/131873765-897ec81d-f2c4-49bf-9774-c212dc3133cb.png)
 
 
 
@@ -1544,8 +1544,7 @@ kubectl edit deployment sharecar-reservation
 kubectl autoscale deployment sharecar-order --cpu-percent=50 --min=1 --max=10
 ```
 
-![image](https://user-images.githubusercontent.com/32426312/131869194-202359c1-1302-4a6c-80d0-6989f3678fd8.png)
-
+![image](https://user-images.githubusercontent.com/32426312/131874087-1e18a912-5845-4661-9eb0-947714f9dd32.png)
 
 - 잘 적용 되었는지 다음의 명령어로 확인 가능하다.
 
@@ -1554,7 +1553,7 @@ kubectl get horizontalpodautoscaler
 kubectl get hpa
 ```
 
-![image](https://user-images.githubusercontent.com/32426312/131869293-705350eb-021d-4c02-861b-4dde3de6637d.png)
+![image](https://user-images.githubusercontent.com/32426312/131874166-28ac64b8-7218-49b3-b3e9-695e3f1c2192.png)
 
 
 ### 부하테스트
@@ -1572,15 +1571,30 @@ watch kubectl get pod
 
 ```bash
 kubectl exec -it siege -- bash
-siege -v -c30 -t30s http://sharecar-order:8080
+siege -v -c30 -t30s http://sharecar-reservation:8080
 ```
 
+![image](https://user-images.githubusercontent.com/32426312/131874511-89dd8852-d70d-4110-8ee2-75f1aec3127d.png)
 
-## 무정지 배포
-#### 무정지 배포 전 replica 3 scale up
-![image](https://user-images.githubusercontent.com/17021291/108797620-f0e22f80-75ce-11eb-81db-de7a27574d03.png)
 
-#### Readiness 설정
+- 첫번째 변화
+![image](https://user-images.githubusercontent.com/32426312/131874339-ea20569e-b5f2-4081-9d33-654aa99c20ad.png)
+
+- 두번째 변화
+![image](https://user-images.githubusercontent.com/32426312/131874368-72091c31-9428-4ecd-8a48-528b17e7d567.png)
+
+- 세번째 변화
+![image](https://user-images.githubusercontent.com/32426312/131874634-d83d4652-5517-461c-9436-78dc69fd4871.png)
+
+
+
+## Readiness Probe : Zero-downtime deploy (Check-Point)
+
+- Readiness Probe가 잘 동작하는지 확인하려면, 무정지 배포가 잘 되는지 확인하면 된다.
+- 무정지 배포란, 코드를 수정하고 새롭게 배포했을때 쿠버네티스가 성급히 기존 Pod를 지우지 않고 새로운 Pod가 안전히 동작할 때까지 기다리는 것이다.
+- 그 후 새로운 Pod가 안전히 동작하면 기존 Pod를 지운다.
+
+### Readiness 설정
 ![image](https://user-images.githubusercontent.com/17021291/108806467-18dc8d80-75e5-11eb-822a-3c187cb7ffcc.png)
 
 #### Rolling Update
