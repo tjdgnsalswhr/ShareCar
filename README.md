@@ -9,6 +9,8 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
   - [분석/설계](#분석-설계)
   - [구현:](#구현)
     - [DDD 의 적용](#ddd-의-적용)
+    - [코드 내용](#코드-내용)
+    - [Local에서의 코드 실행 결과](#Local에서의-코드-실행-결과)
     - [폴리글랏 퍼시스턴스](#폴리글랏-퍼시스턴스)
     - [폴리글랏 프로그래밍](#폴리글랏-프로그래밍)
     - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
@@ -220,7 +222,7 @@ public class PaymentHistory {
 }
 ```
 
-### Aggregate (Payment Service) - PolicyHandler.java
+### Policy (Payment Service) - PolicyHandler.java
 
 ```java
 package sharecar;
@@ -261,7 +263,7 @@ public class PolicyHandler{
 }
 ```
 
-### Aggregate (Payment Service) - PaymentHistoryRepository.java
+### Repository (Payment Service) - PaymentHistoryRepository.java
 
 ```java
 package sharecar;
@@ -277,96 +279,70 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ```
 
 
+## Local에서의 코드 실행 결과
 
-분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 8084 이다)
+### 각 마이크로서비스 실행
+ - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
+ - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
 
-```bash
-cd /Users/imdongbin/Documents/study/MSA/hotel/app
-mvn spring-boot:run
+<Order>
+![image](https://user-images.githubusercontent.com/32426312/131766498-bbb50067-13fd-4741-9fc4-076564edde59.png)
 
-cd /Users/imdongbin/Documents/study/MSA/hotel/hotel
-mvn spring-boot:run 
+<Payment>
+![image](https://user-images.githubusercontent.com/32426312/131766555-e62b7c5c-c38a-4422-a894-3c4bd2c8ab2d.png)
 
-cd /Users/imdongbin/Documents/study/MSA/hotel/pay
-mvn spring-boot:run  
+<Reservation>
+![image](https://user-images.githubusercontent.com/32426312/131766674-241c7111-47ae-454f-94d6-cea19e5aee6e.png)
 
-cd /Users/imdongbin/Documents/study/MSA/hotel/customer
-mvn spring-boot:run 
-```
+<MyPage>
+![image](https://user-images.githubusercontent.com/32426312/131766725-aad35f34-bf57-4ff0-89f4-1d7fcb4187b8.png)
 
-```java
-package hotel;
 
-import javax.persistence.*;
-import org.springframework.beans.BeanUtils;
-import java.util.List;
-
-@Entity
-@Table(name="Payment_table")
-public class Payment {
-
-    @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long id;
-    private Long orderId;
-    private String status;
-    private Integer price;
-    private String payMethod;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    public Integer getPrice() {
-        return price;
-    }
-
-    public void setPrice(Integer price) {
-        this.price = price;
-    }
-    public String getPayMethod() {
-        return payMethod;
-    }
-
-    public void setPayMethod(String payMethod) {
-        this.payMethod = payMethod;
-    }
-
-}
-```
-
-- Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
-```
-package hotel;
-
-import org.springframework.data.repository.PagingAndSortingRepository;
-
-public interface PaymentRepository extends PagingAndSortingRepository<Payment, Long>{
-
-}
-```
 
 - 적용 후 REST API 의 테스트
+	
+< Order 서비스에서 주문처리 (차량 신청 처리) >
+
+- 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
+
+```java
+http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청
+http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우림빌딩 userName=Park status=차량신청
 ```
-# app 서비스의 주문처리
-http localhost:8081/orders hotelId=4001 roomType=delux
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131767893-d838fdfc-027f-460d-b2ca-3001db681bdc.png)
+
+![image](https://user-images.githubusercontent.com/32426312/131767920-fc538dd3-0428-4734-a904-b65b643c66c9.png)
+
+
+< Payment 서비스에서 조회 >
+
+- Order에서 Payment로 Sync, Req/Resp 방식으로 호출하므로, Order에서 주문이 생성되면 Payment에서도 조회가 가능해야한다.
+
+```java
+http GET localhost:8082/paymentHistories
+```
+
+- 실행결과
+![image](https://user-images.githubusercontent.com/32426312/131768274-0f47af35-2586-48f7-b514-d3d533ac2d5b.png)
+	
+- 앞서 생성한 두개의 orderId가 조회되고 있다.
+
+	
+< Reservation 서비스에서 조회 >
+
+- 결제가 진행되면 Reservation이 생성된다.
+
+```java
+http GET localhost:8083/reservations
+```
+
+- 실행결과
+![image](https://user-images.githubusercontent.com/32426312/131768706-a49dbd1c-c0ba-48a9-b79f-12964632b748.png)
+
+
 
 # pay 서비스의 결제처리
 http localhost:8083/payments orderId=3 payMethod=card price=100000
