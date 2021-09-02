@@ -307,12 +307,9 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 
 
-- 적용 후 REST API 의 테스트
-	
+- 적용 후 REST API 의 테스트__
 
-
-< Order 서비스에서 주문처리 (차량 신청 처리) >
-
+< Order 서비스에서 주문처리 (차량 신청 처리) >__
 
 - 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
 
@@ -328,9 +325,9 @@ http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우�
 ![image](https://user-images.githubusercontent.com/32426312/131767920-fc538dd3-0428-4734-a904-b65b643c66c9.png)
 
 
+__
 
-
-< Payment 서비스에서 조회 >
+< Payment 서비스에서 조회 >__
 
 - Order에서 Payment로 Sync, Req/Resp 방식으로 호출하므로, Order에서 주문이 생성되면 Payment에서도 조회가 가능해야한다.
 
