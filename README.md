@@ -44,11 +44,12 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 #### 비기능적 요구사항
 
 1. 트랜잭션
-   - 결제가 왼료되지 않고 중간에 취소되면, 예약 정보는 아예 생성되지 않아야 한다. `Sync 호출`
+   - 차량이 주문되고 결제가 완료되어야만 예약 정보가 아예 생성된다.
+   - 결제가 되지 않은 예약건은, 아예 예약 정보가 생성되지 않아야 한다. `Sync 호출`
 
 2. 장애격리
    - 시스템 쪽에서 차량 관리 기능이 수행되지 않더라도, 차량 예약은 항상 진행될 수 있어야 한다. `Pub/Sub` `Async 호출`
-   - 결제 시스템이 과중되면 사용자를 잠시동안 받지 않고 결제를 잠시후에 하도록 한다.
+   - 결제 시스템이 과중되면 사용자를 잠시동안 받지 않고 잠시후에 결제하도록 한다.
      (장애처리 : Circuit Breaker, fallback)
 
 3. 성능
@@ -67,7 +68,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 #### 부적격 이벤트 탈락
 
-- 차량검색됨과 예약정보 조회됨는, UI적 이벤트이지 업무적인 이벤트가 아니므로 제외함. 
+- 차량검색됨과 예약정보 조회됨는, UI적으로 발생하는 이벤트지 업무적인 이벤트가 아니므로 제외함. 
 
 ![image](https://user-images.githubusercontent.com/32426312/130359864-33e8ef85-792d-4206-8625-2d28b0952efe.png)
 
@@ -120,7 +121,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 2. 장애격리
    - 다른쪽에 문제가 생기더라도, 차량 예약은 항상 진행될 수 있어야 한다. (O)
-   - Eventual Consistency 방식으로 트랜잭션 처리 `(Pub/Sub)` `Async 호출`
+   - `(Pub/Sub)` `Async 호출` 방식으로 트랜잭션 처리.
 
 3. 성능
    - 고객이 예약 확인 상태를 마이페이지에서 확인할 수 있어야 한다. `CQRS`
@@ -139,12 +140,141 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 - 코드 구현의 경우, 위에서 생성한 DDD를 기반으로 코드 자동생성을 한 후 에러를 수정하였다.
 - 그 뒤 필요한 비즈니스 로직을 내부에 추가하였다.
-- 크게 Order, Payment, Reservation, MyPage가 있지만, 모든 코드를 담는 것에는 한계가 있으므로 Payment를 예시로 첨부한다.
+- 크게 Order, Payment, Reservation, MyPage가 있지만, 모든 코드를 여기에 담는 것에는 한계가 있으므로 Payment를 예시로 첨부한다.
 - Payment를 첨부하는 이유는, Order와 Req/Resp 방식의 Sync 통신이 구현됨과 동시에 Reservation과 Pub/Sub 방식의 Async 통신도 담고 있기 때문이다.
 
+ 
+## 코드 내용
 
-### Aggregate (Payment Service) - PaymentHistory
 
+### Aggregate (Payment Service) - PaymentHistory.java
+
+```java
+package sharecar;
+
+import javax.persistence.*;
+import org.springframework.beans.BeanUtils;
+import java.util.List;
+import java.util.Date;
+
+@Entity
+@Table(name="PaymentHistory_table")
+public class PaymentHistory {
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
+    private Long orderId;
+    private String cardNo;
+    private String status;
+
+    @PostPersist
+    public void onPostPersist(){
+        PaymentApproved paymentApproved = new PaymentApproved();
+        paymentApproved.setOrderId(this.id);
+        paymentApproved.setStatus("Payment is Approved");
+        paymentApproved.setCardNo(this.cardNo);
+        System.out.println("Payment is approved, orderId is : " + this.orderId);
+        BeanUtils.copyProperties(this, paymentApproved);
+        paymentApproved.publishAfterCommit();
+
+    }
+    @PreRemove
+    public void onPreRemove() {
+    	PaymentCanceled paymentCanceled = new PaymentCanceled();
+        System.out.println("Payment is canceled, orderId is : " + this.orderId);
+        paymentCanceled.setStatus("Payment canceled");
+        BeanUtils.copyProperties(this, paymentCanceled);
+        paymentCanceled.publishAfterCommit();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+    public String getCardNo() {
+        return cardNo;
+    }
+
+    public void setCardNo(String cardNo) {
+        this.cardNo = cardNo;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+}
+```
+
+### Aggregate (Payment Service) - PolicyHandler.java
+
+```java
+package sharecar;
+
+import sharecar.config.kafka.KafkaProcessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PolicyHandler{
+    @Autowired 
+    PaymentHistoryRepository paymentHistoryRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void onStringEventListener(@Payload String eventString){
+
+    }
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverReservationCanceled_CancelPayment(@Payload ReservationCanceled reservationCanceled){
+
+        if(reservationCanceled.validate()){
+
+            System.out.println("\n\n##### listener CancelPayment : " + reservationCanceled.toJson() + "\n\n");
+            PaymentHistory payment = paymentHistoryRepository.findByOrderId(reservationCanceled.getOrderId());
+            payment.setStatus("PaymentCancelled!");
+            paymentHistoryRepository.save(payment);
+        }
+    }
+
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whatever(@Payload String eventString){}
+}
+```
+
+### Aggregate (Payment Service) - PaymentHistoryRepository.java
+
+```java
+package sharecar;
+
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+
+@RepositoryRestResource(collectionResourceRel="paymentHistories", path="paymentHistories")
+public interface PaymentHistoryRepository extends PagingAndSortingRepository<PaymentHistory, Long>{
+    PaymentHistory findByOrderId(Long orderId);
+}
+
+```
 
 
 
