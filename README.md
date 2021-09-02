@@ -1084,6 +1084,69 @@ http GET localhost:8080/myPages
 
 # 운영
 
+## EKS 생성 및 설정
+
+### EKS 생성
+
+-  다음과 같은 명령어로 EKS를 생성한다.
+
+```bash
+eksctl create cluster --name (Cluster-Name) --version 1.19 --nodegroup-name standard-workers --node-type t3.medium --nodes 4 --nodes-min 1 --nodes-max 4
+```
+
+- 시간이 꽤 흐르면 자기가 알아서 생성한다.
+
+
+### 엑세스 키 생성
+
+- AWS IAM으로 접근한 뒤, 엑세스 키를 생성한다.
+- 이때 Public Key와 Private Key는 자신만 알 수 있는 곳에 저장해둔다.
+
+
+### AWS Configure 주입하기
+
+- 터미널에서 aws configure을 실행한뒤 다음의 네가지 항목을 입력한다.
+- AWS Access Key ID - IAM에서 생성한 퍼블릭 엑세스 키
+- AWS Secret Access Key - IAM에서 생성한 프라이빗 엑세스 키
+- Default region name - 본인이 사용하고 있는 Region 코드
+- Default output format - json
+
+
+### EKS에 Zookeeper & Kafka 설치 및 실행
+
+- 다음의 명령어를 순차적으로 실행한다.
+
+```bash
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
+chmod 700 get_helm.sh
+./get_helm.sh
+kubectl --namespace kube-system create sa tiller      # helm 의 설치관리자를 위한 시스템 사용자 생성
+kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+helm repo add incubator https://charts.helm.sh/incubator
+helm repo update
+kubectl create ns kafka
+helm install my-kafka --namespace kafka incubator/kafka
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131796374-21c10eea-c64d-4366-9913-c914cdf60de3.png)
+
+![image](https://user-images.githubusercontent.com/32426312/131796483-ecb04c70-76a2-49ed-bebd-916f43df2774.png)
+
+
+- kafka가 잘 설치되어 있는지 확인한다.
+
+![image](https://user-images.githubusercontent.com/32426312/131796787-575d38ca-e534-4878-a4cb-d47687c5f4b3.png)
+
+
+### EKS에 Metric 서버 설치
+
+- 다음의 명령어로 쿠버네티스 안에 Metric Server를 설치한다.
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.5.0/components.yaml
+```
+
+
 ## CI/CD (Check-Point)
 
 ### 마이크로 서비스 별로 Git Repo 준비.
@@ -1104,118 +1167,26 @@ http GET localhost:8080/myPages
 ### 각 Git Repo 안에 buildspec.yml 파일 준비
 
 - Git Repo -> AWS ECR -> AWS CodeBuild -> AWS EKS 를 연결하는데 필요한 Buildspec.yml파일을 준비합니다.
+- Order에 설정한 buildspec 내용을 예시로 첨부합니다.
+- PROJECT_NAME은 해당 Repo와 연결되야하는 ECR 이름을 입력합니다.
 
-
-
-- 환경변수 준비  
-<details markdown="1">
-<summary>환경변수 설정 접기/펼치기</summary>
-AWS_ACCOUNT_ID KUBE URL : EKS -> 클러스터 -> 구성 "세부정보"의 "API 엔드포인트 URL" CodeBuild 와 EKS 연결
-
-```
-1. eks-admin-service-account.yaml 파일 생성하여 sa 생성
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: eks-admin
-  namespace: kube-system
-  
-2. kubectl apply -f eks-admin-service-account.yaml
-혹은, 바로 적용도 가능함
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: eks-admin
-  namespace: kube-system
-EOF
-
-3. eks-admin-cluster-role-binding.yaml 파일 생성하여 롤바인딩
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: eks-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: eks-admin
-  namespace: kube-system
-  
-4. kubectl apply -f eks-admin-cluster-role-binding.yaml
-혹은, 바로 적용도 가능함
-cat <<EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: eks-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: eks-admin
-  namespace: kube-system
-EOF
-```
-
-만들어진 eks-admin SA 의 토큰 가져오기
-kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}')
-KUBE TOKEN 가져오기
-:
-
-Code build와 ECR 연결 정책 설정 : code build -> 빌드 프로젝트 생성
-<img width="1029" src=https://user-images.githubusercontent.com/17754849/108522319-0e35a600-7310-11eb-8d63-f32cf0651e0a.png>
-<img width="1029" src=https://user-images.githubusercontent.com/17754849/108524004-ed6e5000-7311-11eb-831d-e6fca77ab59e.png>
-<img width="400" src=https://user-images.githubusercontent.com/17754849/108524571-843b0c80-7312-11eb-968a-9d14b182afb8.png>
-
-그리고 다시 뒷 내용은 "3. CICD-Pipeline_AWS_v2" pdf 자료 39페이지부터 (이미지가 많은 관계로, buildspec.yml 작성하기)
-
-환경 변수  
-<img width="600" src=https://user-images.githubusercontent.com/17754849/108938749-fce3f500-7693-11eb-8fca-8090f2527dfa.png>
-```
-{ "Action": [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetAuthorizationToken",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ],
-    "Resource": "*",
-    "Effect": "Allow"
-}
-```
-
-Codebuild cache 적용 : CICD PDF p.45, S3 만들고 설정해야 함
-buildspec.yml에 aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $_EKS 이거 넣어줘야 하는데 권한 에러 날 경우
-
-https://stackoverflow.com/questions/56011492/accessdeniedexception-creating-eks-cluster-user-is-not-authorized-to-perform 상세 내용은 buildspec.yml과 코드빌드의 환경변수 확인하면 됨
-</details>
-
-- CI/CD 적용 및 빌드 성공 결과  
-<img width="700" src=https://user-images.githubusercontent.com/17754849/108810818-5219fb00-75ef-11eb-9fe4-9ae4e2a4e8d7.png>
-- Buildspec.yml
-
-```
+```yml
 version: 0.2
-
-env: 
+##
+env:
   variables:
-    _PROJECT_NAME: "teamtwohotel2-order"
-    _DIR_NAME: "order"
-    _EKS: "teamtwohotel2"
-    _NAMESPACE: "teamtwohotel"
-
+    _PROJECT_NAME: "sharecar_order"
+#
 phases:
   install:
     runtime-versions:
-      java: openjdk8
+      java: corretto11
       docker: 18
     commands:
+      - echo install kubectl
+      - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -1229,14 +1200,12 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - cd $_DIR_NAME && mvn package -Dmaven.test.skip=true
-      - ls -al
-      - pwd
-      - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$IMAGE_TAG .
+      - mvn package -Dmaven.test.skip=true
+      - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION  .
   post_build:
     commands:
       - echo Pushing the Docker image...
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo connect kubectl
       - kubectl config set-cluster k8s --server="$KUBE_URL" --insecure-skip-tls-verify=true
       - kubectl config set-credentials admin --token="$KUBE_TOKEN"
@@ -1247,40 +1216,37 @@ phases:
           apiVersion: v1
           kind: Service
           metadata:
-            name: $_DIR_NAME
-            namespace: $_NAMESPACE
+            name: $_PROJECT_NAME
             labels:
-              app: $_DIR_NAME
+              app: $_PROJECT_NAME
           spec:
             ports:
               - port: 8080
                 targetPort: 8080
             selector:
-              app: $_DIR_NAME
+              app: $_PROJECT_NAME
           EOF
       - |
           cat  <<EOF | kubectl apply -f -
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: $_DIR_NAME
-            namespace: $_NAMESPACE
+            name: $_PROJECT_NAME
             labels:
-              app: $_DIR_NAME
+              app: $_PROJECT_NAME
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: $_DIR_NAME
+                app: $_PROJECT_NAME
             template:
               metadata:
                 labels:
-                  app: $_DIR_NAME
+                  app: $_PROJECT_NAME
               spec:
                 containers:
-                  - name: $_DIR_NAME
-                    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$IMAGE_TAG
-                    imagePullPolicy: Always
+                  - name: $_PROJECT_NAME
+                    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
                     ports:
                       - containerPort: 8080
                     readinessProbe:
@@ -1300,10 +1266,42 @@ phases:
                       periodSeconds: 5
                       failureThreshold: 5
           EOF
-cache:
-  paths:
-    - '/root/.m2/**/*'
+#cache:
+#  paths:
+#    - '/root/.m2/**/*'
 ```
+
+### 환경변수 준비
+
+- AWS CodeBuild를 설정하기 위해서는 환경변수가 필요합니다.
+- AWS REGION : 현재 사용하고 있는 지역
+- AWS_ACCOUNT_ID : 본인의 ACCOUNT
+- KUBE_URL : EKS의 엔드포인트
+- KUBE_TOKEN : EKS 토큰
+- EKS 토큰의 경우 다음의 명령어로 가져올 수 있다.
+- kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep eks-admin | awk '{print $1}')
+
+
+### AWS Codebuild 생성
+
+- 각 서비스 별로 Codebuild를 생성한다.
+
+![image](https://user-images.githubusercontent.com/32426312/131793572-6aaa4d34-5d86-47b4-b9dc-358ce44d8832.png)
+
+
+#### IAM 수정
+
+- CodeBuild에서 ECR에 접근하기 위해서는 권한을 추가해주어야 합니다.
+- 각 Codebuild에서 빌드세부정보->서비스 역할 -> 인라인정책 추가 -> JSON을 선택한 뒤 다음과 같이 추가합니다.
+
+![image](https://user-images.githubusercontent.com/32426312/131794606-07f70249-f9e9-4363-93fc-90cd0ce5ffe8.png)
+
+
+### 배포
+
+- 이제 모든 준비가 끝났으므로, 각 Git Repo에서 Trigger를 주어 빌드를 실행한다.
+- 각주 한줄을 추가한 뒤, Commit& Changes 를 클릭한다.
+
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
