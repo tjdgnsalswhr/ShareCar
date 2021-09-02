@@ -57,7 +57,9 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 3. 성능
    - 고객이 예약 확인 상태를 MyPage에서 확인할 수 있어야 한다. `CQRS`
    
-   
+
+---
+
 # 분석 설계
 
 ## Event Storming 결과
@@ -137,6 +139,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 ![event_stream](https://user-images.githubusercontent.com/76020494/108794206-b07fb300-75c8-11eb-9f97-9a4e1695588c.png)
 
+---
 
 # 코드구현 및 실행결과
 
@@ -280,6 +283,7 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 ```
 
+<hr>
 
 ## Saga Pattern - Local에서의 코드 실행 (Check Point)
 
@@ -289,7 +293,6 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
  - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
  - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
 
-&nbsp;
 
 #### Order
 
@@ -301,23 +304,18 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 ![image](https://user-images.githubusercontent.com/32426312/131766555-e62b7c5c-c38a-4422-a894-3c4bd2c8ab2d.png)
 
-<Reservation>
+&nbsp;
+
+#### Reservation>
 
 ![image](https://user-images.githubusercontent.com/32426312/131766674-241c7111-47ae-454f-94d6-cea19e5aee6e.png)
 
-
-<MyPage>
-
-![image](https://user-images.githubusercontent.com/32426312/131766725-aad35f34-bf57-4ff0-89f4-1d7fcb4187b8.png)
+&nbsp;
 
 
+### REST API 의 테스트  
 
- &nbsp;
-
-
-- 적용 후 REST API 의 테스트  
-
-< Order 서비스에서 주문처리 (차량 신청 처리) >  
+#### Order 서비스에서 주문처리 (차량 신청 처리)
 
 - 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
 
@@ -334,7 +332,7 @@ http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우�
   
 &nbsp;
 
-< Payment 서비스에서 조회 >  
+#### Payment 서비스에서 조회
 
 - Order에서 Payment로 Sync, Req/Resp 방식으로 호출하므로, Order에서 주문이 생성되면 Payment에서도 조회가 가능해야한다.
 
@@ -348,10 +346,9 @@ http GET localhost:8082/paymentHistories
 	
 - 앞서 생성한 두개의 orderId가 조회되고 있다.
 
-	
 &nbsp;
 
-< Reservation 서비스에서 조회 >
+#### Reservation 서비스에서 조회
 
 - 결제가 진행되면 Reservation이 생성된다.
 
@@ -363,9 +360,8 @@ http GET localhost:8083/reservations
 
 ![image](https://user-images.githubusercontent.com/32426312/131768706-a49dbd1c-c0ba-48a9-b79f-12964632b748.png)
 
-&nbsp;
-
 <hr>
+
 
 ## Polyglot (Check-Point)
 <hr>
