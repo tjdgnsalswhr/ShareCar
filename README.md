@@ -62,6 +62,8 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 ## Event Storming 결과
 
+<hr>
+
 #### 이벤트 도출
 
 
@@ -279,21 +281,23 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ```
 
 
-## Local에서의 코드 실행 - Saga Pattern (Check Point)
+## Saga Pattern - Local에서의 코드 실행 (Check Point)
+
 
 ### 각 마이크로서비스 실행
 
  - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
  - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
 
-
 &nbsp;
 
-<Order>
+#### Order
 
 ![image](https://user-images.githubusercontent.com/32426312/131766498-bbb50067-13fd-4741-9fc4-076564edde59.png)
 
-<Payment>
+&nbsp;
+
+#### Payment
 
 ![image](https://user-images.githubusercontent.com/32426312/131766555-e62b7c5c-c38a-4422-a894-3c4bd2c8ab2d.png)
 
@@ -361,10 +365,11 @@ http GET localhost:8083/reservations
 
 &nbsp;
 
+<hr>
 
+## Polyglot (Check-Point)
+<hr>
 
-**## Polyglot (Check-Point)
-**
 - MSA의 가장 장점 중 하나는, 마이크로서비스 별로 Language나 DB가 달라도 된다는 것이다.
 - Polyglot을 잘 만족하는지 확인하기 위해서, Order 서비스의 DB를 H2에서 HSQLDB로 변경한다.
 
@@ -426,8 +431,8 @@ http GET localhost:8083/reservations
 	
 
 
-**## MyPage - CQRS (Check-Point)
-**
+## MyPage - CQRS (Check-Point)
+
 	
 <hr>
 사용자가 예약정보를 한 눈에 볼 수 있는 MyPage를 구현 한다.(CQRS)
