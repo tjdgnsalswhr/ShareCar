@@ -1410,77 +1410,106 @@ http EXTERNALIP:8080/myPages
 
 
 
-## 동기식 호출 / 서킷 브레이킹 / 장애격리
+## Circuit Breaker (Check-Point)
 
-* 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
+- Circuit Breaker를 구현하기 위해선, 비동기식 호출이 아닌 동기식 호출 관계여야 한다.
+- 동기식 호출에 사용되는 Spring의 Feign Client와 Yaml 파일에 Hystrix 옵션을 추가하면 Circuit Breaker를 구현할 수 있다.
 
-시나리오는 단말앱(app)-->결제(pay) 시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 결제 요청이 과도할 경우 CB 를 통하여 장애격리.
+- 현재 프로젝트에서는 Order-->Payment로 가는 방향에서 Sync (Res/Resp) 호출이 구현되어 있다.
+- 이에 따라 주문이 들어오고 결제 요청이 과도할 경우, Circuit Breaker를 통해 일시적으로 장애를 격리시키는 것을 구현한다.
 
-- Hystrix 를 설정:  요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정
-```
-# app 서비스, application.yml
+
+### Application.yml 파일 수정
+
+- Hystrix 를 설정:  요청의 처리시간이 610 밀리초가 넘어서고 그 현상이 어느정도 유지되면 Circuit Breaker 동작.
+
+```bash
 
 feign:
   hystrix:
     enabled: true
 
-# To set thread isolation to SEMAPHORE
-#hystrix:
-#  command:
-#    default:
-#      execution:
-#        isolation:
-#          strategy: SEMAPHORE
-
 hystrix:
   command:
-    # 전역설정
     default:
       execution.isolation.thread.timeoutInMilliseconds: 610
 
 ```
 
-- 피호출 서비스(결제:pay) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
-```
-# (pay) Payment.java (Entity)
+### Order.java 수정 
 
-    @PrePersist
-    public void onPrePersist(){
+- 호출을 받는 쪽에서 부하가 되도록 임의로 시간 지연을 설정
 
-        if("cancle".equals(payMethod)) {
-            // 예시 푸드 딜리버리처럼 행위 필드를 하나 더 추가 하려다가 payMethod에 cancle 들어오면 취소 요청인 것으로 정의
-            PayCanceled payCanceled = new PayCanceled();
-            BeanUtils.copyProperties(this, payCanceled);
-            payCanceled.publish();
-        } else {
-            PayApproved payApproved = new PayApproved();
-            BeanUtils.copyProperties(this, payApproved);
+```java
 
-            // 바로 이벤트를 보내버리면 주문정보가 커밋되기도 전에 예약 상태 변경 이벤트가 발송되어 주문테이블의 상태가 바뀌지 않을 수 있다.
-            // TX 리스너는 커밋이 완료된 후에 이벤트를 발생하도록 만들어준다.
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                @Override
-                public void beforeCommit(boolean readOnly) {
-                    payApproved.publish();
-                }
-            });
+   @PostPersist
+    public void onPostPersist(){
 
-            try { // 피호출 서비스(결제:pay) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
-                Thread.currentThread().sleep((long) (400 + Math.random() * 220));
-            } catch (InterruptedException e) {
+
+        OrderPlaced orderPlaced = new OrderPlaced();
+        orderPlaced.setStatus("Car is Selected, This order id is :" + this.id);
+        System.out.println("Car is Selected, This order id is :" + this.id);
+        BeanUtils.copyProperties(this, orderPlaced);
+        orderPlaced.publishAfterCommit();
+        
+        try 
+        { 
+               Thread.currentThread().sleep((long) (400 + Math.random() * 220));  
+        } 
+        catch (InterruptedException e) 
+        {
                 e.printStackTrace();
-            }
-
         }
+
+	
+        //Order가 생성됨에 따라, Sync/Req,Resp 방식으로 Payment를 부르는 과정
+        PaymentHistory paymentHistory = new PaymentHistory();
+        System.out.println("Payment is Requested, orderId is : " + this.id);
+        paymentHistory.setOrderId(this.id);
+        paymentHistory.setCardNo(this.cardNo);
+        paymentHistory.setStatus("Payment is Requested, orderId is : " + this.id);
+        OrderApplication.applicationContext.getBean(sharecar.external.PaymentHistoryService.class)
+            .pay(paymentHistory);
     }
-```
-
-* 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
-- 동시사용자 100명
-- 60초 동안 실시
 
 ```
-siege -c100 -t60S -r10 --content-type "application/json" 'http://localhost:8081/orders POST {"hotelId": "4001", "roomType": "standard"}'
+
+### Siege.yml 생성 및 배포
+
+- 부하테스트에 필요한 툴인 siege를 사용하기 위해 yml 파일로 배포한다.
+
+```bash
+apiVersion: v1
+kind: Pod
+metadata:
+  name: siege
+spec:
+  containers:
+    - name: siege
+      image: apexacme/siege-nginx
+```
+
+- 위와 같이 yml 파일을 작성하여 저장한 뒤, 다음의 명령어로 배포한다.
+
+```bash
+kubectl apply -f siege.yml
+```
+
+
+### 부하테스트
+
+- siege 툴을 사용하여, Circuit Breaker가 동작하는지 확인한다.
+- 동시사용자 45명, 55초 동안 실시
+- 다음의 명령어를 사용한다.
+
+```bash
+kubectl exec -it siege -- bash
+siege -v -c45 -t55S --content-type "application/json" 'http://sharecar-order:8080/orders POST {"carBrand":"쏘나타","carNumber":"01누1111"}'
+```
+
+
+![image](https://user-images.githubusercontent.com/32426312/131857263-1e1ea0af-f1b8-432d-9c2a-a7ddec744e24.png)
+
 
 defaulting to time-based testing: 60 seconds
 
@@ -1498,25 +1527,25 @@ defaulting to time-based testing: 60 seconds
 	"shortest_transaction":		        0.44
 }
 
-```
-- 80.34% 성공, 19.66% 실패
 
-## 오토스케일 아웃
+- 위 사진에서, 중간에 Request가 빨간불이 되었다가 파란불이 되는 것을 반복하는것이 보인다.
+- 부하가 걸려 Circuit Breaker가 작동했음을 알 수 있다.
+
+
+
+## Autoscale HPA (Check-Point)
+
 #### 사전 작업
-1. metric server 설치 - kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.7/components.yaml
 2. Resource Request/Limit 설정
 ![image](https://user-images.githubusercontent.com/17021291/108804593-09f3dc00-75e1-11eb-9505-6d2140b61d00.png)
 3. HPA 설정 - kubectl autoscale deployment payment --cpu-percent=50 --min=1 --max=10 cpu-percent=50 -n teamtwohotel  
 
 Pod 들의 요청 대비 평균 CPU 사용율 (여기서는 요청이 200 milli-cores이므로, 모든 Pod의 평균 CPU 사용율이 100 milli-cores(50%)를 넘게되면 HPA 발생)"
 
-#### Siege 도구 활용한 부하(Stress) 주기
-1. siege 설치 - kubectl create -f siege.yaml
-2. siege 접속 - kubectl exec -it siege -- /bin/bash
-![image](https://user-images.githubusercontent.com/17021291/108792500-c1c6c080-75c4-11eb-8d9b-718f7c030de3.png)
 
 #### 부하에 따른 오토스케일 아웃 모니터링
 ![image](https://user-images.githubusercontent.com/17021291/108803415-f4c97e00-75dd-11eb-9fa0-7c01135c551d.png)
+
 
 ## 무정지 배포
 #### 무정지 배포 전 replica 3 scale up
