@@ -58,7 +58,6 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
    - 고객이 예약 확인 상태를 MyPage에서 확인할 수 있어야 한다. `CQRS`
    
 
----
 
 # 분석 설계
 
@@ -130,13 +129,6 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 3. 성능
    - 고객이 예약 확인 상태를 마이페이지에서 확인할 수 있어야 한다. `CQRS`
-
-
-## 헥사고날 아키텍처 다이어그램 도출
-- 비지니스 로직은 내부에 순수한 형태로 구현
-- 그 이외의 것을 어댑터 형식으로 설계 하여 해당 비지니스 로직이 어느 환경에서도 잘 도작하도록 설계
-
-![event_stream](https://user-images.githubusercontent.com/76020494/108794206-b07fb300-75c8-11eb-9f97-9a4e1695588c.png)
 
 
 
@@ -358,7 +350,7 @@ http GET localhost:8083/reservations
 
 ![image](https://user-images.githubusercontent.com/32426312/131768706-a49dbd1c-c0ba-48a9-b79f-12964632b748.png)
 
-<hr>
+
 
 
 ## Polyglot (Check-Point)
@@ -426,11 +418,10 @@ http GET localhost:8083/reservations
 
 ## MyPage - CQRS (Check-Point)
 
-	
-<hr>
+
 사용자가 예약정보를 한 눈에 볼 수 있는 MyPage를 구현 한다.(CQRS)
 
-- MyPage 생성 단계
+### MyPage 생성
 
 ![image](https://user-images.githubusercontent.com/32426312/130360123-c5069bb7-3478-4bc5-ac6c-08b198e769f3.png)
 
@@ -457,10 +448,10 @@ http GET localhost:8083/reservations
 
 &nbsp;
 
-- MyPage 코드 자동 생성
+### MyPage 코드 자동 생성
 
 
-### MyPage.java
+#### MyPage.java
 
 ```java
 package sharecar;
@@ -544,7 +535,7 @@ public class MyPage {
 
 ```
 
-### MyPageViewHandler.java
+#### MyPageViewHandler.java
 
 ```java
 package sharecar;
@@ -682,7 +673,7 @@ public class MyPageViewHandler {
 
 ```
 
-### PolicyHandler.java
+#### PolicyHandler.java
 
 ```java
 package sharecar;
@@ -717,7 +708,7 @@ public class PolicyHandler{
 }
 ```
 	
-### MyPageRepository.java
+#### MyPageRepository.java
 
 ```java
 package sharecar;
@@ -732,272 +723,301 @@ public interface MyPageRepository extends CrudRepository<MyPage, Long> {
     void deleteByOrderId(Long orderId);
 }
 ```
-	
 
-```
-# mypage 호출 
-http localhost:8081/mypages/12
 
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Wed, 24 Feb 2021 00:09:57 GMT
-Transfer-Encoding: chunked
+### MyPage 실행
 
-{
-    "_links": {
-        "mypage": {
-            "href": "http://localhost:8081/mypages/12"
-        },
-        "self": {
-            "href": "http://localhost:8081/mypages/12"
-        }
-    },
-    "hotelId": "3001",
-    "orderId": 11,
-    "payMethod": "card",
-    "paymentId": null,
-    "price": 100000,
-    "reservationId": 2,
-    "roomType": "suite",
-    "status": "Confirming reservation"
-}
+![image](https://user-images.githubusercontent.com/32426312/131773620-88b505a1-364a-4804-98b4-c799ce78e138.png)
+
+
+
+### MyPage 테스트
+
+
+- 모든 마이크로서비스를 재기동 후 주문을 다시 넣어준다.
+- 그 후 MyPage로 확인한다.
+
+```bash
+http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청_Polyglot
+http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우림빌딩 userName=Park status=차량신청_Polyglot
+
+http localhost:8084/myPages
 ```
 
-## 동기식 호출 과 Fallback 처리
+![image](https://user-images.githubusercontent.com/32426312/131780363-89ffa6a2-4e73-440a-a7b9-6f39af9cc807.png)
 
-분석단계에서의 조건 중 하나로 주문(app)->결제(pay) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+- 주문을 넣고 결제 및 예약이 완료되어 MyPage 상으로도 체크할 수 있는걸 확인할 수 있다.
 
-- 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+&nbsp;
+
+
+## Correlation (Check-Point)
+
+- Correation을 확인할 수 있는 방법은 다음과 같다.
+- 현재 구조상, 
+1. 만약 order 하나를 지운다면 Pub/Sub 호출로 인해 관련된 예약정보가 Cancel 되고,
+2. 예약정보의 Pub/Sub 호출로 인해 다시 관련된 Payment가 Cancel 된다.
+3. Mypage 또한 Order가 지워지면 삭제되므로, 이 또한 확인이 가능해야 한다.
+
+### Test
+
+- 먼저 order를 조회해본다.
+
+```bash
+http localhost:8081/orders
 ```
-# (app) PaymentService.java
 
-package hotel.external;
+![image](https://user-images.githubusercontent.com/32426312/131780715-8689cb89-80a5-4b26-87f0-fa6db4c5bdbd.png)
+
+&nbsp;
+
+- 그 후 orderId가 1인 orders를 지운다.
+
+```bash
+http DELETE localhost:8081/orders/1
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131780832-a7052d48-edf2-4476-afa0-59d3b8da18ff.png)
+
+&nbsp;
+
+- 잘 지워졌는지 확인한다.
+
+```bash
+http localhost:8081/orders
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131780915-c285cb14-7ede-4067-991e-847a26cc563a.png)
+
+&nbsp;
+
+- 그 후 Reservation 서비스에도 잘 Cancel 됬는지 확인한다.
+- 아래 사진을 통해, 이전에는 있었던 orderId=1 에 대한 정보가 사라졌음을 확인할 수 있다.
+
+```bash
+http localhost:8083/reservations
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131781015-9de25e33-bb26-46c2-ba21-77fd9f4cde88.png)
+
+&nbsp;
+
+- 이제 예약이 cancel 됬으므로 관련된 결제가 취소됬는지 확인한다.
+- 아래 사진을 통해, orderId=1 에 대한 Payment 상태가 Cancelled로 갱신된걸 확인할 수 있다.
+
+```bash
+http localhost:8082/paymentHistories
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131781191-f0670547-37b2-41ce-80b2-adf759be493c.png)
+
+
+&nbsp;
+
+- 마지막으로 해당 정보가 MyPage에도 잘 보이는지 확인해본다.
+- 아래 사진을 통해, orderId=1에 대한 MyPage가 삭제된걸 확인할 수 있다.
+
+```bash
+http localhost:8084/myPages
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131781395-57bb0e9e-d902-429b-8c62-8d57e86b4f45.png)
+
+&nbsp;
+
+
+## 동기식 호출 - Req/Resp (Check-Point)
+
+- 분석단계에서의 조건 중 하나로 트랜잭션을 적용하기 위해 주문(order)->결제(pay) 간의 호출은 Sync 호출을 사용하기로 했다.
+
+### 구현
+
+#### Order.java (중에서..)
+
+```java
+
+    @PostPersist
+    public void onPostPersist(){
+
+
+        OrderPlaced orderPlaced = new OrderPlaced();
+        orderPlaced.setStatus("Car is Selected, This order id is :" + this.id);
+        System.out.println("Car is Selected, This order id is :" + this.id);
+        BeanUtils.copyProperties(this, orderPlaced);
+        orderPlaced.publishAfterCommit();
+
+
+        //Order가 생성됨에 따라, Sync/Req,Resp 방식으로 Payment를 부르는 과정
+        PaymentHistory paymentHistory = new PaymentHistory();
+        System.out.println("Payment is Requested, orderId is : " + this.id);
+        paymentHistory.setOrderId(this.id);
+        paymentHistory.setCardNo(this.cardNo);
+        paymentHistory.setStatus("Payment is Requested, orderId is : " + this.id);
+        OrderApplication.applicationContext.getBean(sharecar.external.PaymentHistoryService.class)
+            .pay(paymentHistory);
+
+    }
+    
+```
+
+- 위와 같은 코드로, Order가 생성될때 필요한 Parameter들을 담아 External 객체 안에 있는 pay 함수를 호출한다.
+
+
+#### PaymentHistoryService.java (중에서..)
+
+```java
+package sharecar.external;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Date;
 
-@FeignClient(name="payment", url="${api.payment.url}")
-public interface PaymentService {
-
-    @RequestMapping(method= RequestMethod.POST, path="/payments")
-    public void pay(@RequestBody Payment payment);
-
-}
-```
-
-- 주문을 받은 직후(@PostPersist) 결제를 요청하도록 처리
-```
-# Order.java (Entity)
-
-    @PostPersist
-    public void onPostPersist(){
-        Ordered ordered = new Ordered();
-        BeanUtils.copyProperties(this, ordered);
-        ordered.publishAfterCommit();
-
-        hotel.external.Payment payment = new hotel.external.Payment();
-
-        AppApplication.applicationContext.getBean(hotel.external.PaymentService.class)
-            .pay(payment);
-
-    }
-```
-
-- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 결제 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
-```
-# 결제 (pay) 서비스를 잠시 내려놓음 (ctrl+c)
-
-#주문처리
-http localhost:8081/orders hotelId=1002 roomType=delux   
-
-#Fail
-HTTP/1.1 500 
-Connection: close
-Content-Type: application/json;charset=UTF-8
-Date: Wed, 24 Feb 2021 00:00:18 GMT
-Transfer-Encoding: chunked
-
-{
-    "error": "Internal Server Error",
-    "message": "Could not commit JPA transaction; nested exception is javax.persistence.RollbackException: Error while committing the transaction",
-    "path": "/orders",
-    "status": 500,
-    "timestamp": "2021-02-24T00:00:18.829+0000"
-}
-
-#결제서비스 재기동
-cd /Users/imdongbin/Documents/study/MSA/hotel/pay
-mvn spring-boot:run
-
-#주문처리
-http localhost:8081/orders hotelId=1002 roomType=delux   
-
-#Success
-HTTP/1.1 201 
-Content-Type: application/json;charset=UTF-8
-Date: Wed, 24 Feb 2021 00:01:10 GMT
-Location: http://localhost:8081/orders/9
-Transfer-Encoding: chunked
-
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/9"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/9"
-        }
-    },
-    "hotelId": "1002",
-    "roomType": "delux",
-    "status": null
-}
-```
-
-## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
-
-결제가 이루어진 후에 호텔 시스템으로 이를 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 호텔 시스템의 처리를 위하여 결제주문이 블로킹 되지 않아도록 처리한다.
- 
-- 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
- 
-```
-#Payment.java
-
-package hotel;
-
-import javax.persistence.*;
-import org.springframework.beans.BeanUtils;
-import java.util.List;
-
-@Entity
-@Table(name="Payment_table")
-public class Payment {
-
-...
-
-@PostPersist
-    public void onPostPersist(){
-        PayApproved payApproved = new PayApproved();
-        BeanUtils.copyProperties(this, payApproved);
-        payApproved.publishAfterCommit();
-    }
-```
-
-- 호텔 서비스에서는 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다.
-- 카톡/이메일 등으로 호텔은 노티를 받고, 예약 상황을 확인 하고, 최종 예약 상태를 UI에 입력할테니, 우선 예약정보를 DB에 받아놓은 후, 이후 처리는 해당 Aggregate 내에서 하면 되겠다.
-
-```
-# PolicyHandler.java
-
-package hotel;
-
-import hotel.config.kafka.KafkaProcessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Service;
-
-@Service
-public class PolicyHandler{
-    @StreamListener(KafkaProcessor.INPUT)
-    public void onStringEventListener(@Payload String eventString){
-
-    }
-
-    @Autowired
-    ReservationRepository reservationRepository;
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverPayApproved_(@Payload PayApproved payApproved){
-
-        if(payApproved.isMe()){
-            System.out.println("##### listener  : " + payApproved.toJson());
-            // 결제 승인 되었으니 호텔에 예약 확인 하라고 카톡 알림 처리 필요
-            Reservation reservation = new Reservation();
-            reservation.setOrderId(payApproved.getOrderId());
-            reservation.setStatus("Confirming reservation");
-
-            reservationRepository.save(reservation);
-        }
-    }
+@FeignClient(name="Payment", url="${api.payment.url}")
+public interface PaymentHistoryService {
+    @RequestMapping(method= RequestMethod.POST, path="/paymentHistories")
+    public void pay(@RequestBody PaymentHistory paymentHistory);
 
 }
-```
-
-호텔 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 호텔 시스템이 유지보수로 인해 잠시 내려간 상태라도 예약 주문을 받는데 문제가 없어야 한다.
 
 ```
-# 호텔 서비스 (hotel) 를 잠시 내려놓음 (ctrl+c)
 
-# 주문처리
-http localhost:8081/orders hotelId=3001 roomType=suite   #Success
+- Order 서비스 프로젝트 폴더에 External 형식으로 Import 된 PaymentHistoryService에는 위와 같이 pay 함수가 구현되었다.
+- 동기식 호출을 위해 FeignClient를 사용하였으며, 해당 url을 통해 Payment 서비스로 Request를 날리고 Response를 받을 수 있다.
 
-# 결제처리
-http localhost:8083/payments orderId=11 price=100000 payMethod=card   #Success
 
-# 주문 상태 확인
-http localhost:8081/orders/11     
+### 잘 되는지 TEST
 
-# 주문상태 안바뀜 확인
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Wed, 24 Feb 2021 00:03:23 GMT
-Transfer-Encoding: chunked
+- Order를 생성했을 때 Payment쪽에도 정보가 잘 넘어가는 것은 위에 REST API TEST에서 확인할 수 있는 내용으로, Sync 호출 (Req/Resp)이 잘 되고 있는 것에 대한 증명이다.
 
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/11"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/11"
-        }
-    },
-    "hotelId": "3001",
-    "roomType": "suite",
-    "status": null
-}
 
-# hotel 서비스 기동
-cd /Users/imdongbin/Documents/study/MSA/hotel/hotel
-mvn spring-boot:run
 
-# 주문상태 확인
-http localhost:8081/orders/11
+### 트랙잭션 TEST
 
-# 주문 상태가 "Confirming reservation"으로 확인
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Wed, 24 Feb 2021 00:04:03 GMT
-Transfer-Encoding: chunked
+- 그렇다면 의도한대로, 결제 시스템에서 장애가 나면 트랜잭션이 완료되지 못하는지 확인해본다.
+- Payment 서비스를 잠시 내린 후에 REST API 테스트를 진행한다.
 
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/11"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/11"
-        }
-    },
-    "hotelId": "3001",
-    "roomType": "suite",
-    "status": "Confirming reservation"
-}
+```java
+http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청
 ```
 
-## API 게이트웨이(gateway)
+![image](https://user-images.githubusercontent.com/32426312/131782759-066f234c-9614-4056-8bd8-8b2b0495974e.png)
 
-API gateway 를 통해 MSA 진입점을 통일 시킨다.
+&nbsp;
 
+- 위와 같이 Payment 서비스가 동작하지 않자, 주문 자체가 안되는 것을 확인할 수 있다.
+
+- 이제 다시 Payment 서비스를 재기동해본다.
+- 그 후 다시 실행한다.
+
+
+```java
+http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청
 ```
-# gateway 기동(8088 포트)
+
+![image](https://user-images.githubusercontent.com/32426312/131782904-8d0b945b-23ac-49f5-aad0-ddf0593a98f6.png)
+
+
+- 그러자 이번에는 잘 성공하는 것을 확인할 수 있다.
+
+&nbsp;
+
+
+## Async 호출 - Pub/Sub
+
+- 비동기식 호출의 경우, 현재 Pament->Reservation, Order->Reservation, Reservation->Payment 가 Pub/Sub 방식으로 구현되어있다.
+- 위에서 Saga Pattern을 테스트 하기 위해 쭉 흐름대로 해봤을때 모두 문제 없이 됬으므로, 비동기식 호출 또한 잘 되고 있다는 것을 확인할 수 있다.
+
+
+
+## API Gateway (Check-Point)
+
+- 이제 API Gateway 를 적용하여 모든 마이크로서비스의 진입점을 통일시킨다.
+
+
+### Gateway 구현 (Application.yml 파일 중에서..)
+
+```java
+
+server:
+  port: 8080
+
+---
+spring:
+  profiles: default
+  cloud:
+    gateway:
+      routes:
+        - id: Order
+          uri: http://localhost:8081
+          predicates:
+            - Path=/orders/** 
+        - id: Payment
+          uri: http://localhost:8082
+          predicates:
+            - Path=/paymentHistories/** 
+        - id: Reservation
+          uri: http://localhost:8083
+          predicates:
+            - Path=/reservations/** 
+        - id: MyPage
+          uri: http://localhost:8084
+          predicates:
+            - Path= /myPages/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+---
+
+spring:
+  profiles: docker
+  cloud:
+    gateway:
+      routes:
+        - id: Order
+          uri: http://Order:8080
+          predicates:
+            - Path=/orders/** 
+        - id: Payment
+          uri: http://Payment:8080
+          predicates:
+            - Path=/paymentHistories/** 
+        - id: Reservation
+          uri: http://Reservation:8080
+          predicates:
+            - Path=/reservations/** 
+        - id: MyPage
+          uri: http://MyPage:8080
+          predicates:
+            - Path= /myPages/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "*"
+            allowedMethods:
+              - "*"
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+server:
+  port: 8080
+---
+```
+
+
+### gateway 구동(8088 포트)
 cd gateway
 mvn spring-boot:run
 
