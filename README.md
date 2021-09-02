@@ -279,7 +279,7 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ```
 
 
-## Local에서의 코드 실행 결과
+## Local에서의 코드 실행 - Saga Pattern (Check Point)
 
 ### 각 마이크로서비스 실행
 
@@ -363,79 +363,76 @@ http GET localhost:8083/reservations
 
 
 
-## Polyglot (Check-Point)
-
+**## Polyglot (Check-Point)
+**
 - MSA의 가장 장점 중 하나는, 마이크로서비스 별로 Language나 DB가 달라도 된다는 것이다.
 - Polyglot을 잘 만족하는지 확인하기 위해서, Order 서비스의 DB를 H2에서 HSQLDB로 변경한다.
 
+&nbsp;
+	
+<변경 전>
 
-```
-<!--		<dependency>-->
-<!--			<groupId>com.h2database</groupId>-->
-<!--			<artifactId>h2</artifactId>-->
-<!--			<scope>runtime</scope>-->
-<!--		</dependency>-->
+![image](https://user-images.githubusercontent.com/32426312/131770573-82cec61b-b01c-4480-9657-657f54f6e635.png)
 
-		<dependency>
-			<groupId>org.hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
-			<version>2.4.0</version>
-			<scope>runtime</scope>
-		</dependency>
+&nbsp;
+	
+<변경 후>
 
-# 변경/재기동 후 예약 주문
-http localhost:8081/orders hotelId=2001 roomType=standard
+![image](https://user-images.githubusercontent.com/32426312/131770693-9956d2a8-794f-4064-b534-bcf927d41bbf.png)
 
-HTTP/1.1 201 
-Content-Type: application/json;charset=UTF-8
-Date: Mon, 22 Feb 2021 06:11:15 GMT
-Location: http://localhost:8081/orders/1
-Transfer-Encoding: chunked
+- 잘 되는지 확인하기 위해 Order 및 다른 서비스들을 재기동 한 후, 앞에서 행했던 REST TEST를 진행한다.
 
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/1"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/1"
-        }
-    },
-    "hotelId": "2001",
-    "roomType": "standard",
-    "status": null
-}
 
-# 저장이 잘 되었는지 조회
-http localhost:8081/orders/1
+< Order 서비스에서 주문처리 (차량 신청 처리) >  
 
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Mon, 22 Feb 2021 06:17:40 GMT
-Transfer-Encoding: chunked
-
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/1"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/1"
-        }
-    },
-    "hotelId": "2001",
-    "roomType": "standard",
-    "status": null
-}
-
+```java
+http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청_Polyglot
+http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우림빌딩 userName=Park status=차량신청_Polyglot
 ```
 
-## 마이페이지
+- 실행결과  
 
-사용자의 예약정보를 한 눈에 볼 수 있게 mypage를 구현 한다.(CQRS)
+![image](https://user-images.githubusercontent.com/32426312/131771112-0d6a3780-34a5-4365-8d12-580cac164eb6.png)
+
+![image](https://user-images.githubusercontent.com/32426312/131771156-71eafe89-88b1-4272-8e0e-099ff32daf7b.png)
+  
+&nbsp;
+
+< Payment 서비스에서 조회 >  
+
+```java
+http GET localhost:8082/paymentHistories
+```
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131771226-1efb978e-74d3-41df-a673-135b915b1a3b.png)
+
+	
+&nbsp;
+
+< Reservation 서비스에서 조회 >
+
+
+```java
+http GET localhost:8083/reservations
+```
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131771315-3180b019-1449-48e2-a7af-5df47a747f21.png)
+
+&nbsp;
+	
+
+
+**## MyPage - CQRS (Check-Point)
+**
+	
+<hr>
+사용자가 예약정보를 한 눈에 볼 수 있는 MyPage를 구현 한다.(CQRS)
 
 - MyPage 생성 단계
-
 
 ![image](https://user-images.githubusercontent.com/32426312/130360123-c5069bb7-3478-4bc5-ac6c-08b198e769f3.png)
 
@@ -460,7 +457,284 @@ Transfer-Encoding: chunked
 
  	-> Order가 삭제될 때, 관련된 MyPage도 삭제된다.
 
+&nbsp;
 
+- MyPage 코드 자동 생성
+
+
+### MyPage.java
+
+```java
+package sharecar;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name="MyPage_table")
+public class MyPage {
+
+        @Id
+        @GeneratedValue(strategy=GenerationType.AUTO)
+        private Long id;
+        private String cardNumber;
+        private String cardBrand;
+        private String cardPost;
+        private String userName;
+        private String cardNo;
+        private String status;
+        private Long orderId;
+
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+        public String getCardNumber() {
+            return cardNumber;
+        }
+
+        public void setCardNumber(String cardNumber) {
+            this.cardNumber = cardNumber;
+        }
+        public String getCardBrand() {
+            return cardBrand;
+        }
+
+        public void setCardBrand(String cardBrand) {
+            this.cardBrand = cardBrand;
+        }
+        public String getCardPost() {
+            return cardPost;
+        }
+
+        public void setCardPost(String cardPost) {
+            this.cardPost = cardPost;
+        }
+        public String getUserName() {
+            return userName;
+        }
+
+        public void setUserName(String userName) {
+            this.userName = userName;
+        }
+        public String getCardNo() {
+            return cardNo;
+        }
+
+        public void setCardNo(String cardNo) {
+            this.cardNo = cardNo;
+        }
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+        public Long getOrderId() {
+            return orderId;
+        }
+
+        public void setOrderId(Long orderId) {
+            this.orderId = orderId;
+        }
+
+}
+
+```
+
+### MyPageViewHandler.java
+
+```java
+package sharecar;
+
+import sharecar.config.kafka.KafkaProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class MyPageViewHandler {
+
+
+    @Autowired
+    private MyPageRepository myPageRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenOrderPlaced_then_CREATE_1 (@Payload OrderPlaced orderPlaced) {
+        try {
+
+            if (!orderPlaced.validate()) return;
+
+            // view 객체 생성
+            MyPage myPage = new MyPage();
+            // view 객체에 이벤트의 Value 를 set 함
+            myPage.setCardNumber(orderPlaced.getCarNumber());
+            myPage.setCardBrand(orderPlaced.getCarBrand());
+            myPage.setCardPost(orderPlaced.getCarPost());
+            myPage.setUserName(orderPlaced.getUserName());
+            myPage.setCardNo(orderPlaced.getCardNo());
+            myPage.setOrderId(orderPlaced.getId());
+            myPage.setStatus("차량 신청됨");
+            // view 레파지 토리에 save
+            myPageRepository.save(myPage);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenPaymentApproved_then_UPDATE_1(@Payload PaymentApproved paymentApproved) {
+        try {
+            if (!paymentApproved.validate()) return;
+                // view 객체 조회
+
+                    MyPage myPage = myPageRepository.findByOrderId(paymentApproved.getOrderId());
+                    //for(MyPage myPage : myPageList){
+                    // view 객체에 이벤트의 eventDirectValue 를 set 함
+                    myPage.setCardNo(paymentApproved.getCardNo());
+                    myPage.setStatus("차량 금액 결제됨");
+                // view 레파지 토리에 save
+                myPageRepository.save(myPage);
+                //}
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenReservationAccepted_then_UPDATE_2(@Payload ReservationAccepted reservationAccepted) {
+        try {
+            if (!reservationAccepted.validate()) return;
+                // view 객체 조회
+
+                    ///List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    MyPage myPage = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    //for(MyPage myPage : myPageList){
+                    // view 객체에 이벤트의 eventDirectValue 를 set 함
+                    myPage.setStatus("예약 완료됨");
+                // view 레파지 토리에 save
+                myPageRepository.save(myPage);
+                //}
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenPaymentCanceled_then_UPDATE_3(@Payload PaymentCanceled paymentCanceled) {
+        try {
+            if (!paymentCanceled.validate()) return;
+                // view 객체 조회
+
+                    ///List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    MyPage myPage = myPageRepository.findByOrderId(paymentCanceled.getOrderId());
+                    //for(MyPage myPage : myPageList){
+                    // view 객체에 이벤트의 eventDirectValue 를 set 함
+                    myPage.setStatus("결제 취소됨");
+                // view 레파지 토리에 save
+                myPageRepository.save(myPage);
+                //}
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenReservationCanceled_then_UPDATE_4(@Payload ReservationCanceled reservationCanceled) {
+        try {
+            if (!reservationCanceled.validate()) return;
+               // view 객체 조회
+
+                    ///List<MyPage> myPageList = myPageRepository.findByOrderId(reservationAccepted.getOrderId());
+                    MyPage myPage = myPageRepository.findByOrderId(reservationCanceled.getOrderId());
+                    //for(MyPage myPage : myPageList){
+                    // view 객체에 이벤트의 eventDirectValue 를 set 함
+                    myPage.setStatus("예약 취소됨");
+                // view 레파지 토리에 save
+                myPageRepository.save(myPage);
+                //}
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenOrderCancelled_then_DELETE_1(@Payload OrderCancelled orderCancelled) {
+        try {
+            if (!orderCancelled.validate()) return;
+            // view 레파지 토리에 삭제 쿼리
+            myPageRepository.deleteByOrderId(orderCancelled.getId());
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+}
+
+```
+
+### PolicyHandler.java
+
+```java
+package sharecar;
+
+import sharecar.config.kafka.KafkaProcessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PolicyHandler{
+
+    @Autowired
+    MyPageRepository myPageRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whatever(@Payload String eventString){}
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverOrderCancelled_CancelMyPage(@Payload OrderCancelled orderCancelled){
+
+        if(orderCancelled.validate()){
+            System.out.println("##### MyPage OrderCanceled listener  : " + orderCancelled.toJson());
+            MyPage myPage = myPageRepository.findByOrderId(orderCancelled.getId());
+	        //reserve.setStatus("Cancelled!");
+            myPageRepository.delete(myPage);
+        }
+    }
+}
+```
+	
+### MyPageRepository.java
+
+```java
+package sharecar;
+
+import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
+
+public interface MyPageRepository extends CrudRepository<MyPage, Long> {
+
+    MyPage findByOrderId(Long orderId);
+    void deleteByOrderId(Long orderId);
+}
+```
+	
 
 ```
 # mypage 호출 
