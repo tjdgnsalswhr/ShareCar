@@ -1161,7 +1161,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/down
 
 - 각 마이크로서비스별 Repository에 연결될 ECR 저장소도 필요하다.
 
-![image](https://user-images.githubusercontent.com/32426312/131787427-4a04648a-32dd-4ec2-bcc3-2d4951bbc37b.png)
+![image](https://user-images.githubusercontent.com/32426312/131808134-519e970c-9485-45c5-bcd5-12ac83f44fa2.png)
 
 
 ### 각 Git Repo 안에 buildspec.yml 파일 준비
@@ -1175,7 +1175,7 @@ version: 0.2
 ##
 env:
   variables:
-    _PROJECT_NAME: "sharecar_order"
+    _PROJECT_NAME: "sharecar-order"
 #
 phases:
   install:
@@ -1299,8 +1299,115 @@ phases:
 
 ### 배포
 
+#### Codebuild를 사용하여 쿠버네티스에 배포
+
 - 이제 모든 준비가 끝났으므로, 각 Git Repo에서 Trigger를 주어 빌드를 실행한다.
 - 각주 한줄을 추가한 뒤, Commit& Changes 를 클릭한다.
+
+![image](https://user-images.githubusercontent.com/32426312/131826222-dd7a34a6-2112-4aa9-b94d-cf204cdc28e3.png)
+
+- AWS Codebuild가 연결된 Github에서 소스를 가져와 빌드하고 쿠버네티스에 배포를 시작한다.
+- 시간이 조금 걸리므로 잠시 기다린다.
+
+![image](https://user-images.githubusercontent.com/32426312/131827826-57c477d6-7529-44cb-a8b9-dc80486b976a.png)
+
+- 위와 같이 성공 메세지가 뜨면 배포가 성공한 것이다.
+
+
+#### 쿠버네티스에서 배포 확인
+
+- 먼저 Pod가 정상적으로 띄어졌는지 확인하기 위해 다음의 명령어를 사용한다.
+
+```bash
+kubectl get pod
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131827899-1c3f81c3-f3bb-4e5e-9beb-e68bfee79c14.png)
+
+- Pod는 모두 정상적으로 동작함을 확인했다.
+- 이제 관련된 Service도 정상적으로 동작하는지 확인한다.
+
+```bash
+kubectl get svc
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131827936-8df5094e-ae9d-496f-8e4a-923339af2a40.png)
+
+- gateway는 LoadBalancer 타입으로, 나머지는 ClusterIP 타입으로 정상 배포가 된 것을 확인할 수 있다.
+
+
+#### 배포된 상태로 API TEST
+
+- 이제 클라우드에 배포가 되었으니, 로컬 형태가 아닌 External IP 형태로 REST API TEST를 진행한다.
+- 위 명령어에서 Gateway의 External IP를 얻었으니 그것으로 접근을 시도한다.
+
+
+#### 통신 테스트
+
+```bash
+http GET EXTERNALIP:8080/orders
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131831839-9115da37-20e4-450b-b784-279a69602e56.png)
+
+
+
+#### Gateway 에서 주문처리 (차량 신청 처리) 
+
+```java
+http EXTERNALIP:8080/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청_Polyglot
+http EXTERNALIP:8080/orders carNumber=101가1231 carBrand=아반떼 carPost=우림빌딩 userName=Park status=차량신청_Polyglot
+```
+
+- 실행결과  
+
+![image](https://user-images.githubusercontent.com/32426312/131833139-64a7a9c2-9f8e-4b63-979d-548a245d941f.png)
+
+![image](https://user-images.githubusercontent.com/32426312/131833174-320197c6-09ac-4f6f-9003-468a2da2e620.png)
+  
+&nbsp;
+
+#### Gateway에서 Payment 조회
+
+```java
+http EXTERNALIP:8080/paymentHistories
+```
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131833361-e5626242-4255-4367-8840-d500872c9438.png)
+
+	
+&nbsp;
+
+#### Gateway에서 Reservation 조회
+
+
+```java
+http EXTERNALIP:8080/reservations
+```
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131833448-b915a249-0696-42b4-89a5-45fbc5e88474.png)
+
+&nbsp;
+
+
+#### Gateway에서 MyPage 조회
+
+
+```java
+http EXTERNALIP:8080/myPages
+```
+
+- 실행결과
+
+![image](https://user-images.githubusercontent.com/32426312/131833622-bd7fbad8-2da7-4cfa-8a81-56237f48c0ab.png)
+
+&nbsp;
+
+
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
