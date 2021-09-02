@@ -282,6 +282,7 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ## Local에서의 코드 실행 결과
 
 ### 각 마이크로서비스 실행
+<br>
  - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
  - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
 
@@ -300,9 +301,9 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 
 - 적용 후 REST API 의 테스트
-	
+<br>
 < Order 서비스에서 주문처리 (차량 신청 처리) >
-
+<br>
 - 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
 
 ```java
