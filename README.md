@@ -64,7 +64,6 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 
 ## Event Storming 결과
 
-<hr>
 
 #### 이벤트 도출
 
@@ -283,7 +282,6 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 ```
 
-<hr>
 
 ## Saga Pattern - Local에서의 코드 실행 (Check Point)
 
@@ -364,27 +362,26 @@ http GET localhost:8083/reservations
 
 
 ## Polyglot (Check-Point)
-<hr>
 
 - MSA의 가장 장점 중 하나는, 마이크로서비스 별로 Language나 DB가 달라도 된다는 것이다.
 - Polyglot을 잘 만족하는지 확인하기 위해서, Order 서비스의 DB를 H2에서 HSQLDB로 변경한다.
 
 &nbsp;
 	
-<변경 전>
+### 변경전
 
 ![image](https://user-images.githubusercontent.com/32426312/131770573-82cec61b-b01c-4480-9657-657f54f6e635.png)
 
 &nbsp;
 	
-<변경 후>
+### 변경후
 
 ![image](https://user-images.githubusercontent.com/32426312/131770693-9956d2a8-794f-4064-b534-bcf927d41bbf.png)
 
 - 잘 되는지 확인하기 위해 Order 및 다른 서비스들을 재기동 한 후, 앞에서 행했던 REST TEST를 진행한다.
 
 
-< Order 서비스에서 주문처리 (차량 신청 처리) >  
+#### Order 서비스에서 주문처리 (차량 신청 처리) 
 
 ```java
 http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판교역3번출구 userName=Lee status=차량신청_Polyglot
@@ -399,7 +396,7 @@ http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우�
   
 &nbsp;
 
-< Payment 서비스에서 조회 >  
+#### Payment 서비스에서 조회
 
 ```java
 http GET localhost:8082/paymentHistories
@@ -412,7 +409,7 @@ http GET localhost:8082/paymentHistories
 	
 &nbsp;
 
-< Reservation 서비스에서 조회 >
+#### Reservation 서비스에서 조회
 
 
 ```java
