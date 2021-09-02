@@ -359,11 +359,15 @@ http GET localhost:8083/reservations
 
 ![image](https://user-images.githubusercontent.com/32426312/131768706-a49dbd1c-c0ba-48a9-b79f-12964632b748.png)
 
+&nbsp;
 
-## 폴리글랏 퍼시스턴스
 
-폴리그랏 퍼시스턴스 요건을 만족하기 위해 기존 h2를 hsqldb로 변경
-https://www.baeldung.com/spring-boot-hsqldb 참고
+
+## Polyglot (Check-Point)
+
+- MSA의 가장 장점 중 하나는, 마이크로서비스 별로 Language나 DB가 달라도 된다는 것이다.
+- Polyglot을 잘 만족하는지 확인하기 위해서, Order 서비스의 DB를 H2에서 HSQLDB로 변경한다.
+
 
 ```
 <!--		<dependency>-->
