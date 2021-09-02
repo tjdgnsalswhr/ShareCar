@@ -284,7 +284,7 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ### 각 마이크로서비스 실행
 <br>
  - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
- - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
+ - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)  
 
 <Order>
 
@@ -305,11 +305,11 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 
 
+  
 
+- 적용 후 REST API 의 테스트  
 
-- 적용 후 REST API 의 테스트__
-
-< Order 서비스에서 주문처리 (차량 신청 처리) >__
+< Order 서비스에서 주문처리 (차량 신청 처리) >  
 
 - 다음의 명령어를 사용하여 두 개의 차량 주문을 넣는다.
 
@@ -318,16 +318,14 @@ http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판�
 http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우림빌딩 userName=Park status=차량신청
 ```
 
-- 실행결과
+- 실행결과  
 
 ![image](https://user-images.githubusercontent.com/32426312/131767893-d838fdfc-027f-460d-b2ca-3001db681bdc.png)
 
 ![image](https://user-images.githubusercontent.com/32426312/131767920-fc538dd3-0428-4734-a904-b65b643c66c9.png)
+  
 
-
-__
-
-< Payment 서비스에서 조회 >__
+< Payment 서비스에서 조회 >  
 
 - Order에서 Payment로 Sync, Req/Resp 방식으로 호출하므로, Order에서 주문이 생성되면 Payment에서도 조회가 가능해야한다.
 
