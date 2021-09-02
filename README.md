@@ -284,7 +284,8 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ### 각 마이크로서비스 실행
 <br>
  - 먼저 구현한 각 서비스를 다음과 같이 명령어로 실행한다. 
- - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)  
+ - (Order : 8081, Payment : 8082, Reservation : 8083, MyPage : 8084)
+ <br />
 
 <Order>
 
@@ -305,7 +306,7 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 
 
 
-  
+ <br />
 
 - 적용 후 REST API 의 테스트  
 
@@ -324,7 +325,7 @@ http localhost:8081/orders carNumber=101가1231 carBrand=아반떼 carPost=우�
 
 ![image](https://user-images.githubusercontent.com/32426312/131767920-fc538dd3-0428-4734-a904-b65b643c66c9.png)
   
-
+<br />
 < Payment 서비스에서 조회 >  
 
 - Order에서 Payment로 Sync, Req/Resp 방식으로 호출하므로, Order에서 주문이 생성되면 Payment에서도 조회가 가능해야한다.
@@ -335,13 +336,12 @@ http GET localhost:8082/paymentHistories
 
 - 실행결과
 
-
 ![image](https://user-images.githubusercontent.com/32426312/131768274-0f47af35-2586-48f7-b514-d3d533ac2d5b.png)
 	
 - 앞서 생성한 두개의 orderId가 조회되고 있다.
 
 	
-
+<br />
 < Reservation 서비스에서 조회 >
 
 - 결제가 진행되면 Reservation이 생성된다.
@@ -354,37 +354,6 @@ http GET localhost:8083/reservations
 
 ![image](https://user-images.githubusercontent.com/32426312/131768706-a49dbd1c-c0ba-48a9-b79f-12964632b748.png)
 
-
-
-# pay 서비스의 결제처리
-http localhost:8083/payments orderId=3 payMethod=card price=100000
-
-# hotel 서비스의 예약처리
-http localhost:8082/reservations orderId=3 status="confirmed"
-
-# 주문 상태 확인
-http localhost:8081/orders/3
-
-HTTP/1.1 200 
-Content-Type: application/hal+json;charset=UTF-8
-Date: Tue, 23 Feb 2021 23:56:54 GMT
-Transfer-Encoding: chunked
-
-{
-    "_links": {
-        "order": {
-            "href": "http://localhost:8081/orders/3"
-        },
-        "self": {
-            "href": "http://localhost:8081/orders/3"
-        }
-    },
-    "hotelId": "4001",
-    "roomType": "delux",
-    "status": "confirmed"
-}
-
-```
 
 ## 폴리글랏 퍼시스턴스
 
