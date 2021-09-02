@@ -1594,18 +1594,99 @@ siege -v -c30 -t30s http://sharecar-reservation:8080
 - 무정지 배포란, 코드를 수정하고 새롭게 배포했을때 쿠버네티스가 성급히 기존 Pod를 지우지 않고 새로운 Pod가 안전히 동작할 때까지 기다리는 것이다.
 - 그 후 새로운 Pod가 안전히 동작하면 기존 Pod를 지운다.
 
+
 ### Readiness 설정
-![image](https://user-images.githubusercontent.com/17021291/108806467-18dc8d80-75e5-11eb-822a-3c187cb7ffcc.png)
 
-#### Rolling Update
-kubectl set image deploy order order=새로운 이미지 버전
-![image](https://user-images.githubusercontent.com/17021291/108797739-461e4100-75cf-11eb-96fc-959f48dc17c0.png)
+- Readiness Probe를 설정하기 위해서는, 쿠버네티스에 배포하는 Deployment.yml 파일에 내용을 추가해주어야 한다.
+- 현재는 Codebuild를 통한 CI/CD 설정으로 buildspec.yml 파일에 deployment 내용이 있으므로 그곳에 추가해준다.
 
-#### siege로 무중단 확인
-![image](https://user-images.githubusercontent.com/17021291/108806577-6f49cc00-75e5-11eb-99c8-8904c9995186.png)
+![image](https://user-images.githubusercontent.com/32426312/131879044-10d90609-8cac-49d0-bdd0-d61e59bc5465.png)
+
+- 그리고 배포 후에 deployment 파일을 열어 잘 적용되어 있는지 확인해준다.
+
+```bash
+kubectl edit deployment sharecar-mypage
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131879261-f1e92607-c3a7-4a98-97ff-8156d37bf8a7.png)
 
 
-## Configmap
+### TEST 배포
+
+- 이제 Readiness Probe를 확인하기 위해, 타겟인 sharecar-mypage의 github에서 코드를 수정한다.
+- CI/CD 설정으로 인해 AWS Codebuild가 자동으로 빌드 및 배포를 진행한다.
+- 그 과정에서 무중단배포가 잘 이루어지는지 확인한다.
+
+![image](https://user-images.githubusercontent.com/32426312/131879741-1ede5edb-e996-4c9d-a07a-e96fbbd7567e.png)
+
+
+
+### 터미널에서 Zero-downtime deploy 확인
+
+- 초기 상태 : 기존 Pod만 살아있음
+
+![image](https://user-images.githubusercontent.com/32426312/131880405-72472f18-9cf8-4532-bf75-ec12643c26d7.png)
+
+- 첫번째 변화 : 새로운 Pod가 올라왔지만 아직 정상동작을 하지 않기에 기존 Pod와 공존함
+
+![image](https://user-images.githubusercontent.com/32426312/131880472-1bc025fa-85ad-43bc-bdda-a83924dfcd0b.png)
+
+- 두번째 변화 : 새로운 Pod가 정상적으로 동작하지만 완벽한 무중단을 위해 기존 Pod를 바로 지우지 않음.
+
+![image](https://user-images.githubusercontent.com/32426312/131880640-d48f59dd-54e8-42e6-9ed3-f32983f64145.png)
+
+- 세번째 변화 : 새롭게 올라온 Pod가 문제가 없자 기존의 Pod를 지우고 대체가 완료됨.
+
+![image](https://user-images.githubusercontent.com/32426312/131880743-c968a4fc-f90d-4593-a1b8-31eb90f524d1.png)
+
+
+## Liveness Probe : Self-healing (Check-Point)
+
+- Liveness Probe가 잘 동작하는지 확인하려면, 잘 동작하고 있는 Pod를 강제로 지워보면 된다.
+- Liveness Probe란, Pod 상태를 계속 체크하고 있다가 비정상이 감지될 경우 Pod를 재시작한다.
+- 만약 Liveness Probe가 잘 동작한다면, Pod를 강제로 지웠을때 비정상을 감지하고 Pod를 재시작 할 것이다.
+
+### Livenss 설정
+
+- Readiness Probe를 설정하기 위해서는, 쿠버네티스에 배포하는 Deployment.yml 파일에 내용을 추가해주어야 한다.
+- 현재는 Codebuild를 통한 CI/CD 설정으로 buildspec.yml 파일에 deployment 내용이 있으므로 그곳에 추가해준다.
+
+![image](https://user-images.githubusercontent.com/32426312/131881448-38e72922-b1af-4fe7-a682-2cf7d2fd1093.png)
+
+- 그리고 배포 후에 deployment 파일을 열어 잘 적용되어 있는지 확인해준다.
+
+```bash
+kubectl edit deployment sharecar-mypage
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131881534-35305d1c-0405-47fd-aa02-3e3285c89bcc.png)
+
+
+### 터미널에서 Self-healing 확인
+
+- 터미널에서 타겟 Pod를 강제로 지운다.
+
+```bash
+kubectl get pod
+kubectl delete pod [pod이름]
+```
+
+![image](https://user-images.githubusercontent.com/32426312/131882079-7f2394a8-52c4-4843-bcc3-d7ea7735faab.png)
+
+- 그 후 pod를 조회하여 어떤 현상이 발생하는지 본다.
+
+![image](https://user-images.githubusercontent.com/32426312/131882146-08706093-b21b-4bc0-8532-75bb66f8bb32.png)
+
+- 위와 같이 Pod를 삭제하자 마자 새로운 Pod를 띄우고 활성화 시키려고 한다.
+
+![image](https://user-images.githubusercontent.com/32426312/131882307-0afb3510-4d1b-4dcc-b93f-f4575ac5ba53.png)
+
+- 그리고 얼마 지나지 않고 새롭게 뜬 Pod는 정상적으로 동작한다.
+
+
+
+## Configmap (Check-Point)
+
 - configmap 생성  
   > kubectl create configmap my-config --from-literal=key1=value1 --from-literal=key2=value2
 - configmap 정보 가져오기  
@@ -1641,68 +1722,6 @@ kubectl get secret my-password -o yaml
   > ![소스](https://user-images.githubusercontent.com/17754849/108870840-dd20e280-763b-11eb-8e55-bfc9dc70e9e0.png)
 - 시크릿 자바 출력
   > ![결과출력](https://user-images.githubusercontent.com/17754849/108871144-30933080-763c-11eb-8e76-453348bb7ec0.png)
-
-
-# 참고
-
-## 개발 환경 구성
-
-1. 도커 설치
-https://whitepaek.tistory.com/38
-위에 가면 도커 관련 명령어들도 있음
-
-2. 카프카 설치
-```
-https://dev-jj.tistory.com/entry/MAC-Kafka-%EB%A7%A5%EC%97%90-Kafka-%EC%84%A4%EC%B9%98-%ED%95%98%EA%B8%B0-Docker-homebrew-Apache
-https://jdm.kr/blog/208
-경로 이동 /Users/jinhyeonbak/intensive/kafka_2.12-2.3.0/bin
-주키퍼 실행
-./zookeeper-server-start.sh ../config/zookeeper.properties &
-카프카 broker 실행
-./kafka-server-start.sh ../config/server.properties ( 4 ~ 5 는 건너뛰어도 됨 )
-카프카 topic 만들기
-./kafka-topic.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic teamtwohotel
-카프카 producer 실행
-./kafka-console-poducer.sh --broker-list localhost:9092 --topic teamtwohotel
-카프카 consumer 실행
-./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic teamtwohotel --from-beginning
-카프카 토픽 삭제 ./kafka-topics.sh --zookeeper localhost:2181 --delete --topic DummyTopic
-카프카 토픽 리스트 ./kafka-topics.sh --list --zookeeper localhost:2181
-카프카가 비정상일 때 sudo lsof -i :2181 한뒤
-kill -9 pid 하고 다시 띄워준다
-```
-
-3. httpie 설치
-
-4. aws cli 설치
-https://docs.aws.amazon.com/ko_kr/cli/latest/userguide/install-cliv2-mac.html
-aws configure 로 액세스 ID 등 입력
-
-5. eksctl 설치
-https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/getting-started-eksctl.html
-
-6. IAM 생성
-https://www.44bits.io/ko/post/publishing_and_managing_aws_user_access_key
-
-7. eksctl 생성 ( 시간이 좀 걸림 )
-클러스터 생성
-eksctl create cluster --name admin-eks --version 1.17 --nodegroup-name standard-workers --node-type t3.medium --nodes 4 --nodes-min 1 --nodes-max 4
-
-8. Local EKS 클러스터 토큰가져오기 ( CI/CD 할때 필요한건데, 앞에 설정해줘야 할 게 더 있으니 아래 쪽 CI/CD 다시 참고 )
-aws eks --region ap-northeast-2 update-kubeconfig --name admin-eks
-
-9. 아마존 컨테이너 레지스트리
-아마존 > ecr (elastic container registry) > ecr 레파지터리 : ECR은 각 배포될 이미지 대상과 이름을 맞춰준다
-aws ecr create-repository --repository-name admin-eks --region ap-northeast-2
-aws ecr put-image-scanning-configuration --repository-name admin-eks --image-scanning-configuration scanOnPush=true --region ap-northeast-2
-
-10. AWS 컨테이너 레지스트리 로그인
-aws ecr get-login-password --region (Region-Code) | docker login --username AWS --password-stdin (Account-Id).dkr.ecr.(Region-Code).amazonaws.com
-
-11. AWS 레지스트리에 도커 이미지 푸시하기 (이건 위에서 한 거랑 좀 겹치는듯)
-aws ecr create-repository --repository-name (IMAGE_NAME) --region ap-northeast-2
-docker push (Account-Id).dkr.ecr.ap-northeast-2.amazonaws.com/(IMAGE_NAME):latest
-
 
 
 
