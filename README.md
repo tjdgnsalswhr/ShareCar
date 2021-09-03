@@ -12,7 +12,7 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
     - [코드 내용](#코드-내용)
     - [Saga Pattern](#Local에서의-코드-실행-결과)
     - [Polyglot (Check-Point)](#Polyglot-(Check-Point))
-    - [CQRS - MyPage (Check-Point)](CQRS-MyPage-(Check-Point))
+    - [CQRS - MyPage (Check-Point)](#CQRS-MyPage-(Check-Point))
     - [Correlation (Check-Point)](#Correlation-(Check-Point))
     - [동기식 호출 - Req/Resp (Check-Point)](#동기식-호출 - Req/Resp-(Check-Point))
     - [## Async 호출 - Pub/Sub](#Async 호출 - Pub/Sub)
