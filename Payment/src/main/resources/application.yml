@@ -63,3 +63,12 @@ spring:
         event-out:
           destination: sharecar
           contentType: application/json
+          
+feign:
+  hystrix:
+    enabled: true
+
+hystrix:
+  command:
+    default:
+      execution.isolation.thread.timeoutInMilliseconds: 610
