@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: Reservation
+  name: sharecar-reservation
   labels:
-    app: Reservation
-spec:
+    app: sharecar-reservation
+  spec:
   replicas: 1
   selector:
     matchLabels:
-      app: Reservation
+      app: sharecar-reservation
   template:
     metadata:
       labels:
-        app: Reservation
+        app: sharecar-reservation
     spec:
       containers:
-        - name: Reservation
-          image: username/Reservation:latest
+        - name: sharecar-reservation
+          image: 052937454741.dkr.ecr.ap-southeast-2.amazonaws.com/sharecar-reservation:latest
           ports:
             - containerPort: 8080
           readinessProbe:
             httpGet:
-              path: '/actuator/health'
+              path: /actuator/health
               port: 8080
             initialDelaySeconds: 10
             timeoutSeconds: 2
@@ -29,7 +29,7 @@ spec:
             failureThreshold: 10
           livenessProbe:
             httpGet:
-              path: '/actuator/health'
+              path: /actuator/health
               port: 8080
             initialDelaySeconds: 120
             timeoutSeconds: 2
