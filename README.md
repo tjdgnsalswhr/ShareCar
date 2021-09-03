@@ -11,19 +11,19 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
     - [DDD 의 적용](#ddd-의-적용)
     - [코드 내용](#코드-내용)
     - [Saga Pattern](#Local에서의-코드-실행-결과)
-    - [Polyglot (Check-Point)](#Polyglot-(Check-Point))
-    - [CQRS - MyPage (Check-Point)](#CQRS-MyPage-(Check-Point))
-    - [Correlation (Check-Point)](#Correlation-(Check-Point))
-    - [동기식 호출 - Req/Resp (Check-Point)](#동기식-호출 - Req/Resp-(Check-Point))
+    - [Polyglot (CheckPoint)](#Polyglot-(CheckPoint))
+    - [CQRS - MyPage (CheckPoint)](#CQRS-MyPage-(CheckPoint))
+    - [Correlation (CheckPoint)](#Correlation-(CheckPoint))
+    - [동기식 호출 - Req/Resp (CheckPoint)](#동기식-호출 - Req/Resp-(CheckPoint))
     - [Async 호출 - Pub/Sub](#Async 호출 - Pub/Sub)
-    - [API Gateway (Check-Point)](#API-Gateway-(Check-Point))
+    - [API Gateway (CheckPoint)](#API-Gateway-(CheckPoint))
   - [운영](#운영)
-    - [CI/CD (Check-Point)](#CI/CD-(Check-Point))
-    - [Circuit Breaker (Check Point)](#Circuit-Breaker-(Check-Point))
-    - [Autoscale : HPA (Check-Point)](#Autoscale-HPA-(Check-Point))
-    - [Readiness Probe : Zero-downtime deploy (Check-Point)](#Readiness-Probe-:-Zero-downtime-deploy (Check-Point))
-    - [Liveness Probe : Self-healing (Check-Point)](#Liveness-Probe-:-Self-healing-(Check-Point))
-    - [Configmap (Check-Point) / Secret](#Configmap-(Check-Point))
+    - [CI/CD (CheckPoint)](#CI/CD-(CheckPoint))
+    - [Circuit Breaker (CheckPoint)](#Circuit-Breaker-(CheckPoint))
+    - [Autoscale : HPA (CheckPoint)](#Autoscale-HPA-(CheckPoint))
+    - [Readiness Probe : Zero-downtime deploy (CheckPoint)](#Readiness-Probe-:-Zero-downtime-deploy (Check-Point))
+    - [Liveness Probe : Self-healing (CheckPoint)](#Liveness-Probe-:-Self-healing-(CheckPoint))
+    - [Configmap (CheckPoint) / Secret](#Configmap-(CheckPoint))
 
 
 <br>
@@ -274,7 +274,7 @@ public interface PaymentHistoryRepository extends PagingAndSortingRepository<Pay
 ```
 
 
-## Saga Pattern - Local에서의 코드 실행 (Check Point)
+## Saga Pattern - Local에서의 코드 실행 (CheckPoint)
 
 
 ### 각 마이크로서비스 실행
@@ -352,7 +352,7 @@ http GET localhost:8083/reservations
 
 
 
-## Polyglot (Check-Point)
+## Polyglot (CheckPoint)
 
 - MSA의 가장 장점 중 하나는, 마이크로서비스 별로 Language나 DB가 달라도 된다는 것이다.
 - Polyglot을 잘 만족하는지 확인하기 위해서, Order 서비스의 DB를 H2에서 HSQLDB로 변경한다.
@@ -415,7 +415,7 @@ http GET localhost:8083/reservations
 	
 
 
-## CQRS - MyPage (Check-Point)
+## CQRS - MyPage (CheckPoint)
 
 
 사용자가 예약정보를 한 눈에 볼 수 있는 MyPage를 구현 한다.(CQRS)
@@ -825,7 +825,7 @@ http localhost:8084/myPages
 &nbsp;
 
 
-## 동기식 호출 - Req/Resp (Check-Point)
+## 동기식 호출 - Req/Resp (CheckPoint)
 
 - 분석단계에서의 조건 중 하나로 트랜잭션을 적용하기 위해 주문(order)->결제(pay) 간의 호출은 Sync 호출을 사용하기로 했다.
 
@@ -1409,7 +1409,7 @@ http EXTERNALIP:8080/myPages
 
 
 
-## Circuit Breaker (Check-Point)
+## Circuit Breaker (CheckPoint)
 
 - Circuit Breaker를 구현하기 위해선, 비동기식 호출이 아닌 동기식 호출 관계여야 한다.
 - 동기식 호출에 사용되는 Spring의 Feign Client와 Yaml 파일에 Hystrix 옵션을 추가하면 Circuit Breaker를 구현할 수 있다.
@@ -1518,7 +1518,7 @@ siege -v -c45 -t55S --content-type "application/json" 'http://sharecar-order:808
 
 
 
-## Autoscale HPA (Check-Point)
+## Autoscale HPA (CheckPoint)
 
 ### deployment.yml 파일 수정
 
@@ -1587,7 +1587,7 @@ siege -v -c30 -t30s http://sharecar-reservation:8080
 
 
 
-## Readiness Probe : Zero-downtime deploy (Check-Point)
+## Readiness Probe : Zero-downtime deploy (CheckPoint)
 
 - Readiness Probe가 잘 동작하는지 확인하려면, 무정지 배포가 잘 되는지 확인하면 된다.
 - 무정지 배포란, 코드를 수정하고 새롭게 배포했을때 쿠버네티스가 성급히 기존 Pod를 지우지 않고 새로운 Pod가 안전히 동작할 때까지 기다리는 것이다.
@@ -1639,7 +1639,7 @@ kubectl edit deployment sharecar-mypage
 ![image](https://user-images.githubusercontent.com/32426312/131880743-c968a4fc-f90d-4593-a1b8-31eb90f524d1.png)
 
 
-## Liveness Probe : Self-healing (Check-Point)
+## Liveness Probe : Self-healing (CheckPoint)
 
 - Liveness Probe가 잘 동작하는지 확인하려면, 잘 동작하고 있는 Pod를 강제로 지워보면 된다.
 - Liveness Probe란, Pod 상태를 계속 체크하고 있다가 비정상이 감지될 경우 Pod를 재시작한다.
@@ -1684,7 +1684,7 @@ kubectl delete pod [pod이름]
 
 
 
-## Configmap (Check-Point)
+## Configmap (CheckPoint)
 
 - configmap을 생성하는 방법에는 단순 CLI로 하는 법과 Yaml 파일을 작성해서 배포하는 방법이 있다.
 - CLI로 생성하는 방법은 다음과 같다.
