@@ -7,24 +7,23 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
 - [공유차량예약](#---)
   - [서비스 시나리오](#시나리오)
   - [분석/설계](#분석-설계)
-  - [구현:](#구현)
+  - [코드구현 및 실행결과](#코드구현-및-실행결과)
     - [DDD 의 적용](#ddd-의-적용)
     - [코드 내용](#코드-내용)
-    - [Local에서의 코드 실행 결과](#Local에서의-코드-실행-결과)
-    - [폴리글랏 퍼시스턴스](#폴리글랏-퍼시스턴스)
-    - [폴리글랏 프로그래밍](#폴리글랏-프로그래밍)
-    - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
-    - [비동기식 호출 과 Eventual Consistency](#비동기식-호출--시간적-디커플링--장애격리--최종-eventual-일관성-테스트)
-    - [API Gateway](#API-게이트웨이-gateway)
-    - [CQRS / Meterialized View](#마이페이지)
-    - [Saga Pattern / 보상 트랜잭션](#SAGA-CQRS-동작-결과)
+    - [Saga Pattern](#Local에서의-코드-실행-결과)
+    - [Polyglot (Check-Point)](#Polyglot-(Check-Point))
+    - [CQRS - MyPage (Check-Point)](CQRS-MyPage-(Check-Point))
+    - [Correlation (Check-Point)](#Correlation-(Check-Point))
+    - [동기식 호출 - Req/Resp (Check-Point)](#동기식-호출 - Req/Resp-(Check-Point))
+    - [## Async 호출 - Pub/Sub](#Async 호출 - Pub/Sub)
+    - [API-Gateway-(Check-Point)](#API-Gateway-(Check-Point))
   - [운영](#운영)
-    - [CI/CD 설정](#cicd-설정)
-    - [Self Healing](#Self-Healing)
-    - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출--서킷-브레이킹--장애격리)
-    - [오토스케일 아웃](#오토스케일-아웃)
-    - [무정지 재배포](#무정지-배포)
-    - [ConfigMap / Secret](#Configmap)
+    - [CI/CD (Check-Point)](#CI/CD-(Check-Point))
+    - [Circuit Breaker (Check Point)](#Circuit-Breaker-(Check-Point))
+    - [Autoscale : HPA (Check-Point)](#Autoscale-HPA-(Check-Point))
+    - [Readiness Probe : Zero-downtime deploy (Check-Point)](#Readiness-Probe-:-Zero-downtime-deploy (Check-Point))
+    - [Liveness Probe : Self-healing (Check-Point)](#Liveness-Probe-:-Self-healing-(Check-Point))
+    - [Configmap (Check-Point) / Secret](#Configmap-(Check-Point))
 
 
 <br>
@@ -416,7 +415,7 @@ http GET localhost:8083/reservations
 	
 
 
-## MyPage - CQRS (Check-Point)
+## CQRS - MyPage (Check-Point)
 
 
 사용자가 예약정보를 한 눈에 볼 수 있는 MyPage를 구현 한다.(CQRS)
