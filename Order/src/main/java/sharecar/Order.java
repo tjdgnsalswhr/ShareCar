@@ -27,6 +27,16 @@ public class Order {
         System.out.println("Car is Selected, This order id is :" + this.id);
         BeanUtils.copyProperties(this, orderPlaced);
         orderPlaced.publishAfterCommit();
+        
+        try 
+        { // 피호출 서비스(결제:pay) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
+               Thread.currentThread().sleep((long) (400 + Math.random() * 220));
+            
+        } 
+        catch (InterruptedException e) 
+        {
+                e.printStackTrace();
+        }
 
 
         //Order가 생성됨에 따라, Sync/Req,Resp 방식으로 Payment를 부르는 과정
