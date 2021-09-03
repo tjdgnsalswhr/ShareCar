@@ -14,8 +14,8 @@ Socar나 Green Car와 같은 카셰어링을 간단히 따라해보는 서비스
     - [Polyglot (CheckPoint)](#Polyglot-(CheckPoint))
     - [CQRS - MyPage (CheckPoint)](#CQRS-MyPage-(CheckPoint))
     - [Correlation (CheckPoint)](#Correlation-(CheckPoint))
-    - [동기식 호출 - Req/Resp (CheckPoint)](#동기식-호출 - Req/Resp-(CheckPoint))
-    - [Async 호출 - Pub/Sub](#Async 호출 - Pub/Sub)
+    - [Sync 호출 : Req/Resp (CheckPoint)](#Sync-호출-:-Req/Resp-(CheckPoint))
+    - [Async 호출 : Pub/Sub](#Async-호출-:-Pub/Sub)
     - [API Gateway (CheckPoint)](#API-Gateway-(CheckPoint))
   - [운영](#운영)
     - [CI/CD (CheckPoint)](#CI/CD-(CheckPoint))
@@ -825,7 +825,7 @@ http localhost:8084/myPages
 &nbsp;
 
 
-## 동기식 호출 - Req/Resp (CheckPoint)
+## Sync 호출 : Req/Resp (CheckPoint)
 
 - 분석단계에서의 조건 중 하나로 트랜잭션을 적용하기 위해 주문(order)->결제(pay) 간의 호출은 Sync 호출을 사용하기로 했다.
 
@@ -925,7 +925,7 @@ http localhost:8081/orders carNumber=132누8781 carBrand=쏘나타 carPost=판�
 &nbsp;
 
 
-## Async 호출 - Pub/Sub
+## Async 호출 : Pub/Sub
 
 - 비동기식 호출의 경우, 현재 Pament->Reservation, Order->Reservation, Reservation->Payment 가 Pub/Sub 방식으로 구현되어있다.
 - 위에서 Saga Pattern을 테스트 하기 위해 쭉 흐름대로 해봤을때 모두 문제 없이 됬으므로, 비동기식 호출 또한 잘 되고 있다는 것을 확인할 수 있다.
